@@ -63,7 +63,7 @@
  "docs_fournis": [],
  "hypotheses": {
   "taux_av_per": 0.055,
-  "scpi_brut": 0.06,
+  "scpi_brut": 0.055,
   "fiscalite_comptant": 0.2,
   "scpi_reval": 0.005,
   "loyers_taux_simu": 0.055

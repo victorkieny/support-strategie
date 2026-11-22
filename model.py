@@ -5,7 +5,7 @@ import datetime, json, os
 from engine import run_financement
 
 MOIS_FR = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
-HYP_DEFAUT = {"taux_av_per": 0.055, "scpi_brut": 0.06, "fiscalite_comptant": 0.20, "scpi_reval": 0.005, "loyers_taux_simu": 0.055}
+HYP_DEFAUT = {"taux_av_per": 0.055, "scpi_brut": 0.055, "fiscalite_comptant": 0.20, "scpi_reval": 0.005, "loyers_taux_simu": 0.055}
 APPORT_DEFAUT = 750
 
 
