@@ -53,3 +53,12 @@ def run_projection(d, horizon):
     if p.returncode != 0:
         raise RuntimeError("Moteur projection en échec : " + (p.stderr.strip() or "erreur inconnue"))
     return json.loads(p.stdout)
+
+
+def etat_simulateurs(fichier_valide):
+    """Compare le commit des simulateurs utilisés à celui sur lequel les tests ont été recalés (diagnostic d'un écart)."""
+    ensure_simulateur()
+    actuel = subprocess.run(["git", "-C", DEPOT, "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
+    valide = open(fichier_valide).read().strip()
+    return (f"simulateurs @ {actuel} (commit de référence des tests : {valide})" if actuel == valide
+            else f"simulateurs @ {actuel} ≠ commit de référence {valide} : le simulateur a changé depuis le dernier recalage des tests")

@@ -89,7 +89,7 @@ def simulate(d, horizons=(10, 20, 30)):
     for y in range(1, H + 1):
         a, p, s, f = proj["av"][y - 1], proj["per"][y - 1], proj["scpi"][y - 1], rf[y - 1]
         loy_fin += f["loyer"]
-        loy_dir = s["revenusCumules"] * (1 - fisc)
+        loy_dir = s["revenusCumules"]   # déjà nets de fiscalité dans projection.html (fiscaliteEuropeenne, taux effectif)
         versé = invest0 + 12 * y * prog + 12 * fin["mensualite_exacte"] * min(y, fin["duree"])
         impot = (d["per"]["initial"] + 12 * y * d["per"]["mensuel"]) * d["per"]["taux_eco"]
         total = a["capital"] + p["capital"] + s["capital"] + f["valeur"] - f["crd"]
@@ -97,7 +97,7 @@ def simulate(d, horizons=(10, 20, 30)):
             "av": a["capital"], "per": p["capital"], "scpi": s["capital"], "fin": f["valeur"] - f["crd"], "total": total,
             "versé": versé, "impot": impot, "loyers": loy_dir + loy_fin,
             "poche": versé - impot - loy_dir - loy_fin,
-            "loyers_mois": s["revenuMensuel"] * (1 - fisc) + f["loyer_mois"],
+            "loyers_mois": s["revenuMensuel"] + f["loyer_mois"],
         }
         series[y] = rec
         if y in horizons:
