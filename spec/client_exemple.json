@@ -1,70 +1,71 @@
 {
-  "client": {
-    "registre": "tu",
-    "prenoms": [
-      "Alex"
-    ],
-    "nom": "Alex Martin"
-  },
-  "rdv": {
-    "date": "2026-11-19",
-    "passe": "brouillon"
-  },
-  "situation": {
-    "precaution": {
-      "label": "Livret A",
-      "montant": 15000
-    },
-    "investir": 27000
-  },
-  "objectifs": [
-    "Compléter tes revenus régulièrement",
-    "Diversifier ton patrimoine",
-    "Optimiser la fiscalité de tes revenus",
-    "Préparer ta retraite"
+ "fictif": true,
+ "client": {
+  "registre": "tu",
+  "prenoms": [
+   "Alex"
   ],
-  "av": {
-    "initial": 11250,
-    "mensuel": 150
+  "nom": "Alex Martin"
+ },
+ "rdv": {
+  "date": "2026-11-19",
+  "passe": "brouillon"
+ },
+ "situation": {
+  "precaution": {
+   "label": "Livret A",
+   "montant": 15000
   },
-  "scpi": {
-    "initial": 12000,
-    "mensuel": 100
-  },
-  "per": {
-    "initial": 3000,
-    "mensuel": 150
-  },
-  "financement": {
-    "retenu": true,
-    "apport": 750,
-    "emprunte": 100000,
-    "duree": 25,
-    "taux": 0.06,
-    "assurance": 0.0,
-    "pertinence": {
-      "revenus_stables": true,
-      "dossier_banque": true,
-      "negociation": true
-    }
-  },
-  "leviers": {
-    "tmi": 0.3,
-    "capacite_mensualite": 700,
-    "impot_annee": 6240,
-    "annee_impot": 2027
-  },
-  "horizons": [
-    10,
-    20,
-    30
-  ],
-  "docs_fournis": [],
-  "hypotheses": {
-    "taux_av_per": 0.055,
-    "scpi_brut": 0.06,
-    "fiscalite_comptant": 0.2,
-    "scpi_reval": 0.005,
-    "loyers_taux_simu": 0.055
+  "investir": 27000
+ },
+ "objectifs": [
+  "Compléter tes revenus régulièrement",
+  "Diversifier ton patrimoine",
+  "Optimiser la fiscalité de tes revenus",
+  "Préparer ta retraite"
+ ],
+ "av": {
+  "initial": 11250,
+  "mensuel": 150
+ },
+ "scpi": {
+  "initial": 12000,
+  "mensuel": 100
+ },
+ "per": {
+  "initial": 3000,
+  "mensuel": 150
+ },
+ "financement": {
+  "retenu": true,
+  "apport": 750,
+  "emprunte": 100000,
+  "duree": 25,
+  "taux": 0.06,
+  "assurance": 0.0,
+  "pertinence": {
+   "revenus_stables": true,
+   "dossier_banque": true,
+   "negociation": true
   }
+ },
+ "leviers": {
+  "tmi": 0.3,
+  "capacite_mensualite": 700,
+  "impot_annee": 6240,
+  "annee_impot": 2027
+ },
+ "horizons": [
+  10,
+  20,
+  30
+ ],
+ "docs_fournis": [],
+ "hypotheses": {
+  "taux_av_per": 0.055,
+  "scpi_brut": 0.06,
+  "fiscalite_comptant": 0.2,
+  "scpi_reval": 0.005,
+  "loyers_taux_simu": 0.055
+ }
 }

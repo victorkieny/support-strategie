@@ -82,11 +82,14 @@ NAV = ["Constat", "Stratégie", "Projection", "Mise en place"]
 
 def shell(idx, nav_on, inner, d, total=8):
     nav = "".join(f'<span class="{"on" if i == nav_on else ""}"><b>0{i+1}</b>{n}</span>' for i, n in enumerate(NAV))
+    # pastille centrale du pied de page : données fictives (exemples) > « Brouillon » > rien (version finale)
+    mq = "Maquette · données fictives" if d.get("fictif") else ("Brouillon" if d.get("passe") == "brouillon" else "")
+    mq_html = f'<span class="mq">{mq}</span>' if mq else "<span></span>"
     return f"""
 <section class="page">
   <div class="hdr"><img src="{LOGO}"><div class="sep"></div><div class="nav">{nav}</div><div class="who">{d['client']['nom']}</div></div>
   <div class="main">{inner}</div>
-  <div class="ftr"><span>Victor Kieny</span><span class="mq">Maquette · données fictives</span><span>Version du {d['version']} · {idx}/{total}</span></div>
+  <div class="ftr"><span>Victor Kieny</span>{mq_html}<span>Version du {d['version']} · {idx}/{total}</span></div>
 </section>"""
 
 

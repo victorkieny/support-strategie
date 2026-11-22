@@ -21,6 +21,7 @@ def prepare(c, version=None):
         "client": {"prenom": " et ".join(c["client"]["prenoms"]), "nom": c["client"]["nom"], "registre": c["client"]["registre"]},
         "date_rdv": f"{j} {MOIS_FR[m - 1]} {y}",
         "passe": c["rdv"].get("passe", "brouillon"),
+        "fictif": c.get("fictif", False),                     # exemples et tests uniquement
         "version": version or datetime.date.today().strftime("%d/%m/%Y"),
         "situation": {"precaution": c["situation"]["precaution"], "investir": {"montant": c["situation"]["investir"]}},
         "objectifs": c["objectifs"],
