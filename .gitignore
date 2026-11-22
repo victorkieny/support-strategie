@@ -1,0 +1,5 @@
+__pycache__/
+out/*.pdf
+out/*.html
+maquette_render.html
+clients/
