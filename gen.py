@@ -24,8 +24,12 @@ def valider(c):
     ini = c["av"]["initial"] + c["scpi"]["initial"] + c["per"]["initial"] + (fi.get("apport", 750) if fi["retenu"] else 0)
     if ini != c["situation"]["investir"]:
         E.append(f"AV + SCPI + PER (initiaux)" + (" + apport" if fi["retenu"] else "") + f" = {ini} € ≠ épargne à investir {c['situation']['investir']} €")
-    if c["leviers"]["tmi"] not in TMI_VALIDES:
-        E.append(f"TMI {c['leviers']['tmi']} hors barème {TMI_VALIDES}")
+    L = c.get("leviers", {})
+    has_per = c["per"]["initial"] + c["per"]["mensuel"] > 0
+    if (has_per or "tmi" in L) and L.get("tmi") not in TMI_VALIDES:
+        E.append(f"TMI {L.get('tmi')} hors barème {TMI_VALIDES}")
+    if has_per and "impot_annee" not in L:
+        E.append("leviers.impot_annee requis dès qu'il y a un PER")
     h = c.get("horizons", [10, 20, 30])
     if not (2 <= len(h) <= 3 and list(h) == sorted(set(h))):
         E.append("horizons : 2 ou 3 valeurs strictement croissantes")
@@ -33,10 +37,10 @@ def valider(c):
         if not (5 <= fi["duree"] <= 25): E.append("financement.duree hors plage du simulateur (5 à 25 ans)")
         if not (10000 <= fi["emprunte"] <= 500000): E.append("financement.emprunte hors plage du simulateur (10 000 à 500 000 €)")
         if not (0.03 <= fi["taux"] <= 0.075): E.append("financement.taux hors plage du simulateur (3 à 7,5 %)")
-    eco1 = c["per"].get("economie_annee1") or (c["per"]["initial"] + 12 * c["per"]["mensuel"]) * c["leviers"]["tmi"]
-    if eco1 > c["leviers"]["impot_annee"]:
-        E.append(f"économie d'impôt PER année 1 ({eco1:.0f} €) supérieure à l'impôt prévisionnel ({c['leviers']['impot_annee']} €)")
-    if "economie_annee1" not in c["per"]:
+    eco1 = (c["per"].get("economie_annee1") or (c["per"]["initial"] + 12 * c["per"]["mensuel"]) * L.get("tmi", 0)) if has_per else 0
+    if has_per and eco1 > L.get("impot_annee", 0):
+        E.append(f"économie d'impôt PER année 1 ({eco1:.0f} €) supérieure à l'impôt prévisionnel ({L.get('impot_annee')} €)")
+    if has_per and "economie_annee1" not in c["per"]:
         W.append("économie d'impôt PER = versement × TMI (approximation) ; renseigner per.economie_annee1 si le cas est limite")
     return E, W
 
@@ -51,6 +55,9 @@ def controles_pdf(pdf, d, retenu):
     for mot in MOTS_INTERDITS:
         for m in re.finditer(mot, txt, flags=re.I):
             E.append(f"mot interdit « {m.group(0)} » : …{txt[max(0, m.start()-30):m.end()+30].strip()}…".replace("\n", " "))
+    if not d.get("has_per", True):
+        for m in re.finditer(r"\bPER\b", txt):
+            E.append("« PER » présent alors que le dossier est sans PER : …" + txt[max(0, m.start()-30):m.end()+30].strip().replace("\n", " ") + "…")
     for m in re.finditer(r"cr[ée]dit", txt, flags=re.I):
         ctx = txt[max(0, m.start()-25):m.end()+25].replace("\n", " ")
         if "opération de crédit" not in ctx:

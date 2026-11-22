@@ -15,7 +15,7 @@ def prepare(c, version=None):
     fi = c["financement"]
     per = {k: v for k, v in c["per"].items() if k != "economie_annee1"}
     eco1 = c["per"].get("economie_annee1")       # économie d'impôt réelle année 1 (simulateur PER), sinon versement × TMI
-    per["taux_eco"] = eco1 / (per["initial"] + 12 * per["mensuel"]) if eco1 else c["leviers"]["tmi"]
+    per["taux_eco"] = eco1 / (per["initial"] + 12 * per["mensuel"]) if eco1 else c.get("leviers", {}).get("tmi", 0)
     h = {**HYP_DEFAUT, **c.get("hypotheses", {})}
     d = {
         "client": {"prenom": " et ".join(c["client"]["prenoms"]), "nom": c["client"]["nom"], "registre": c["client"]["registre"]},
@@ -26,9 +26,11 @@ def prepare(c, version=None):
         "objectifs": c["objectifs"],
         "financement": fi["retenu"],
         "docs_fournis": c.get("docs_fournis", []),
+        "logement": {"statut": fi.get("logement", "locataire"), "par": fi.get("heberge_par", "la personne qui t’héberge")},   # locataire | heberge
         "pertinence": fi.get("pertinence", {}),
         "horizons": tuple(c.get("horizons", (10, 20, 30))),
-        "leviers": c["leviers"],
+        "leviers": c.get("leviers", {}),
+        "has_per": (per["initial"] + per["mensuel"]) > 0,      # sans PER : 3 enveloppes (pas de colonne, de page ni de mention PER)
         "av": c["av"], "scpi": c["scpi"], "per": per,
         "fin": {"apport": fi.get("apport", APPORT_DEFAUT), "emprunte": fi["emprunte"], "duree": fi["duree"],
                 "taux": fi["taux"], "assurance": fi.get("assurance", 0.0), "loyers_taux_simu": h["loyers_taux_simu"]},
@@ -78,7 +80,7 @@ def simulate(d, horizons=(10, 20, 30)):
     fin = d["fin"]
     rf = run_financement(fin, d["hyp"], H)["annees"]
     fisc = d["hyp"]["fiscalite_comptant"]
-    tmi = d["leviers"]["tmi"]
+    tmi = d["leviers"].get("tmi", 0)
     prog = d["av"]["mensuel"] + d["scpi"]["mensuel"] + d["per"]["mensuel"]
     invest0 = d["situation"]["investir"]["montant"]
     loy_dir = loy_fin = 0.0

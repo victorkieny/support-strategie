@@ -1,0 +1,65 @@
+{
+ "client": {
+  "registre": "tu",
+  "prenoms": [
+   "Camille"
+  ],
+  "nom": "Camille Durand"
+ },
+ "rdv": {
+  "date": "2026-11-27",
+  "passe": "brouillon"
+ },
+ "situation": {
+  "precaution": {
+   "label": "Livret A",
+   "montant": 8000
+  },
+  "investir": 24000
+ },
+ "objectifs": [
+  "Faire fructifier ton épargne tout en la gardant disponible",
+  "Constituer un patrimoine immobilier grâce au levier du financement",
+  "Diversifier ton patrimoine",
+  "Préparer ta retraite"
+ ],
+ "av": {
+  "initial": 18250,
+  "mensuel": 500
+ },
+ "scpi": {
+  "initial": 5000,
+  "mensuel": 600
+ },
+ "per": {
+  "initial": 0,
+  "mensuel": 0
+ },
+ "financement": {
+  "retenu": true,
+  "apport": 750,
+  "emprunte": 100000,
+  "duree": 25,
+  "taux": 0.06,
+  "assurance": 0.0015,
+  "pertinence": {
+   "revenus_stables": false,
+   "dossier_banque": true,
+   "negociation": true
+  },
+  "logement": "heberge",
+  "heberge_par": "ton père"
+ },
+ "leviers": {
+  "capacite_mensualite": 900
+ },
+ "horizons": [
+  10,
+  20,
+  30
+ ],
+ "docs_fournis": [],
+ "hypotheses": {
+  "scpi_brut": 0.055
+ }
+}
