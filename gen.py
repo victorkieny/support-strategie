@@ -30,6 +30,8 @@ def valider(c):
         E.append(f"TMI {L.get('tmi')} hors barème {TMI_VALIDES}")
     if has_per and "impot_annee" not in L:
         E.append("leviers.impot_annee requis dès qu'il y a un PER")
+    if c.get("hypotheses", {}).get("scpi_brut", 0.06) != 0.06:
+        E.append("hypotheses.scpi_brut : SCPI en direct = 6 % de loyers, valeur fixe (règle de Victor) ; ne pas la surcharger")
     h = c.get("horizons", [10, 20, 30])
     if not (2 <= len(h) <= 3 and list(h) == sorted(set(h))):
         E.append("horizons : 2 ou 3 valeurs strictement croissantes")
