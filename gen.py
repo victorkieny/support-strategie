@@ -64,7 +64,10 @@ def controles_pdf(pdf, d, retenu):
         ctx = txt[max(0, m.start()-25):m.end()+25].replace("\n", " ")
         if "opération de crédit" not in ctx:
             W.append(f"« crédit » : …{ctx.strip()}…")
-    if d["fin"]["annee_limite"] < d["fin"]["duree"] and retenu:
+    if not retenu:
+        for m in re.finditer(r"financement|Démultiplicatrice|emprunt", txt, flags=re.I):
+            E.append("mention du financement alors qu'il n'est pas retenu (objectif du client à reformuler ?) : …" + txt[max(0, m.start()-30):m.end()+30].strip().replace("\n", " ") + "…")
+    if retenu and d["fin"]["annee_limite"] < d["fin"]["duree"]:
         W.append(f"autofinancement atteint en année {d['fin']['annee_limite']} (avant le terme {d['fin']['duree']}) : page 6 à relire")
     return E, W
 
@@ -77,8 +80,6 @@ def main():
     E, W = valider(c)
     if c["client"]["registre"] != "tu":
         E.append("la version « vous » / « couple » du texte n'existe pas encore : génération refusée plutôt que de produire un texte au tutoiement")
-    if not c["financement"]["retenu"]:
-        E.append("la variante sans financement (pages 1, 2, 3, 5, 7 adaptées, page 6 absente) n'existe pas encore : génération refusée")
     for w in W: print("  ! " + w)
     if E:
         print("ÉCHEC — corriger avant génération :"); [print("  ✗ " + e) for e in E]; sys.exit(1)

@@ -15,7 +15,8 @@ Dépôt **privé** : code uniquement, jamais de données client (dossier `client
 Python 3, Node 22, Playwright (Chromium via `/usr/bin/google-chrome`), poppler (`pdfinfo`, `pdftotext`), git.
 
 ## Limites connues
-Registres « vous » et « couple » et variante sans financement : refusés par `gen.py` (non encore réalisés).
+Registres « vous » et « couple » : refusés par `gen.py` (non encore réalisés).
+Variante sans financement (`financement.retenu = false`) : réalisée, 7 pages (page 6 supprimée, pieds « x/7 »), aucun levier ni mot de financement ; 2 leviers (versement initial, mensuel) + l'impôt si PER ; 2 ou 3 enveloppes ; page « mise en place » avec une seule flèche vers la SCPI en direct. `gen.py` échoue si un mot de financement subsiste dans le PDF (objectif du client à reformuler). Exemples : `spec/client_sans_financement_exemple.json` (avec PER) et `spec/client_sans_financement_sans_per_exemple.json`, test : `tests/test_sans_financement.py`.
 Variante sans PER (PER initial et mensuel à 0) : réalisée, 3 enveloppes, `leviers.tmi` et `leviers.impot_annee` facultatifs, `financement.logement = "heberge"` pour un client hébergé (attestation d'hébergement à la place du bail). Exemple : `spec/client_sans_per_exemple.json`, test : `tests/test_sans_per.py`. Page 4 (« effort réel ») : sans PER et avec peu de SCPI en direct au départ, elle perd son message (écart de quelques euros) : à arbitrer par Victor.
 
 ## Polices

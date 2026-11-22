@@ -33,13 +33,16 @@ def prepare(c, version=None):
         "leviers": c.get("leviers", {}),
         "has_per": (per["initial"] + per["mensuel"]) > 0,      # sans PER : 3 enveloppes (pas de colonne, de page ni de mention PER)
         "av": c["av"], "scpi": c["scpi"], "per": per,
-        "fin": {"apport": fi.get("apport", APPORT_DEFAUT), "emprunte": fi["emprunte"], "duree": fi["duree"],
-                "taux": fi["taux"], "assurance": fi.get("assurance", 0.0), "loyers_taux_simu": h["loyers_taux_simu"]},
+        "fin": ({"apport": fi.get("apport", APPORT_DEFAUT), "emprunte": fi["emprunte"], "duree": fi["duree"],
+                 "taux": fi["taux"], "assurance": fi.get("assurance", 0.0), "loyers_taux_simu": h["loyers_taux_simu"]}
+                if fi["retenu"] else None),             # sans financement : None (jamais des zéros, un oubli doit planter)
         "hyp": {"taux_av_per": h["taux_av_per"], "scpi_brut": h["scpi_brut"],
                 "fiscalite_comptant": h["fiscalite_comptant"], "scpi_reval": h["scpi_reval"]},
     }
     d["hyp"]["scpi_distribution"] = h["scpi_brut"] * (1 - h["fiscalite_comptant"])   # part perçue après impôt
     f = d["fin"]
+    if f is None:                                             # variante sans financement : aucun calcul de financement
+        return d
     r = run_financement(f, d["hyp"], max(d["horizons"]))      # simulateur de Victor (JavaScript, tel quel)
     f["mensualite_exacte"] = r["mensualite"]
     f["mensualite"] = round(r["mensualite"])                  # mensualité affichée (assurance comprise)
@@ -79,7 +82,7 @@ def simulate(d, horizons=(10, 20, 30)):
     H = max(horizons)
     proj = run_projection(d, H)
     fin = d["fin"]
-    rf = run_financement(fin, d["hyp"], H)["annees"]
+    rf = run_financement(fin, d["hyp"], H)["annees"] if fin else None
     fisc = d["hyp"]["fiscalite_comptant"]
     tmi = d["leviers"].get("tmi", 0)
     prog = d["av"]["mensuel"] + d["scpi"]["mensuel"] + d["per"]["mensuel"]
@@ -87,10 +90,11 @@ def simulate(d, horizons=(10, 20, 30)):
     loy_dir = loy_fin = 0.0
     out, series = {}, {}
     for y in range(1, H + 1):
-        a, p, s, f = proj["av"][y - 1], proj["per"][y - 1], proj["scpi"][y - 1], rf[y - 1]
+        a, p, s = proj["av"][y - 1], proj["per"][y - 1], proj["scpi"][y - 1]
+        f = rf[y - 1] if fin else {"loyer": 0.0, "valeur": 0.0, "crd": 0.0, "loyer_mois": 0.0}   # sans financement : rien
         loy_fin += f["loyer"]
         loy_dir = s["revenusCumules"]   # déjà nets de fiscalité dans projection.html (fiscaliteEuropeenne, taux effectif)
-        versé = invest0 + 12 * y * prog + 12 * fin["mensualite_exacte"] * min(y, fin["duree"])
+        versé = invest0 + 12 * y * prog + (12 * fin["mensualite_exacte"] * min(y, fin["duree"]) if fin else 0)
         impot = (d["per"]["initial"] + 12 * y * d["per"]["mensuel"]) * d["per"]["taux_eco"]
         total = a["capital"] + p["capital"] + s["capital"] + f["valeur"] - f["crd"]
         rec = {
@@ -110,7 +114,7 @@ def vases(d):
     """Cascade mensuelle (1er mois) : versements programmés + participation au financement,
     moins économie PER et loyers SCPI en direct perçus."""
     prog_av, prog_sc, prog_per = d["av"]["mensuel"], d["scpi"]["mensuel"], d["per"]["mensuel"]
-    part = d["fin"]["effort"]                      # participation mensuelle au financement
+    part = d["fin"]["effort"] if d["fin"] else 0    # participation mensuelle au financement (0 sans financement)
     eco = prog_per * d["per"]["taux_eco"]
     loy_dir = d["scpi"]["initial"] * d["hyp"]["scpi_distribution"] / 12
     brut = prog_av + prog_sc + prog_per + part
