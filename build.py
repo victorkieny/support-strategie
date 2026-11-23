@@ -108,17 +108,11 @@ def page1(d):
     comp = s["composition"]
     pal = ["#b49868", "#c3af8d", "#758aa4", "#9eb2c8", "#86a08a", "#9aa3ad", "#a98f8a", "#7e8f7f"]
     tot_c = sum(p["montant"] for p in comp)
-    brut = [p["montant"] * 1000 / tot_c for p in comp]   # pourcentages au dixième, arrondis au plus fort reste : somme = 100,0
-    pcts = [int(x) for x in brut]
-    for i in sorted(range(len(comp)), key=lambda i: brut[i] - pcts[i], reverse=True)[:1000 - sum(pcts)]:
-        pcts[i] += 1
     bar = "".join(f'<div style="flex:{p["montant"]};background:{pal[i]}"></div>' for i, p in enumerate(comp))
     def poste(i, p):
-        note = f" · {p['note']}" if p.get("note") else ""
         return (f'<div><div style="height:2px;background:{pal[i]};margin-bottom:10px"></div>'
                 f'<div style="font-size:12.5px">{p["libelle"]}</div>'
-                f'<div class="big" style="font-size:22px;margin:5px 0 4px">{eur(p["montant"])}</div>'
-                f'<div style="font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600">{("%.1f" % (pcts[i] / 10)).replace(".", ",")}&nbsp;%{note}</div></div>')
+                f'<div class="big" style="font-size:22px;margin:5px 0 0">{eur(p["montant"])}</div></div>')
     corps = f'<div style="display:grid;grid-template-columns:repeat({min(len(comp), 4)},1fr);gap:18px 18px">{"".join(poste(i, p) for i, p in enumerate(comp))}</div>'
     prog = d["av"]["mensuel"] + d["scpi"]["mensuel"] + d["per"]["mensuel"]
     def col(c, t, m, sub):
