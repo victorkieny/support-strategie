@@ -102,6 +102,7 @@ def simulate(d, horizons=(10, 20, 30)):
             "versé": versé, "impot": impot, "loyers": loy_dir + loy_fin,
             "poche": versé - impot - loy_dir - loy_fin,
             "loyers_mois": s["revenuMensuel"] + f["loyer_mois"],
+            "loy_dir_mois": s["revenuMensuel"],          # loyers mensuels nets de la seule SCPI en direct (page 4)
         }
         series[y] = rec
         if y in horizons:
@@ -121,6 +122,21 @@ def vases(d):
     reel = brut - eco - loy_dir
     return dict(av=prog_av, sc=prog_sc, per=prog_per, part=part, eco=eco,
                 loy_dir=loy_dir, brut=brut, reel=reel, prog=prog_av + prog_sc + prog_per)
+
+
+def evolution(d):
+    """Page 4 : ce que financent l'économie d'impôt du PER et les loyers de la SCPI en direct, chaque mois, au 1er mois
+    puis à chaque horizon. Le versement programmé (brut) reste celui du 1er mois : la participation au financement et
+    l'économie d'impôt sont gardées constantes (hypothèse prudente, cf. page 6 pour la baisse de l'effort sur le financement)."""
+    v = vases(d)
+    s = simulate(d, d["horizons"])
+    pts = [("Dès le 1er mois", v["loy_dir"])] + [(f"Dans {h} ans", s[h]["loy_dir_mois"]) for h in d["horizons"]]
+    plafond = v["brut"] - v["eco"]
+    cols = []
+    for lab, loy in pts:
+        loy = min(loy, plafond)
+        cols.append(dict(label=lab, loy=loy, eco=v["eco"], reel=plafond - loy, brut=v["brut"]))
+    return cols
 
 
 if __name__ == "__main__":

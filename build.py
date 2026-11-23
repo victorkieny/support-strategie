@@ -1,6 +1,6 @@
 """Maquette — document « Stratégie patrimoniale » (HTML -> PDF). Données fictives, charte des slides de Victor."""
 import sys
-from model import DATA, eur, num, simulate, vases
+from model import DATA, eur, num, simulate, vases, evolution
 
 C = dict(bg="#2a251f", card="#332d26", card2="#3b352d", line="#4a4339", text="#f1eee7", muted="#8e8a83",
          gold="#b49868", tan="#c3af8d", blue="#758aa4", prec="#9aa3ad", sage="#86a08a", lev="#5b9a6b")
@@ -321,49 +321,52 @@ def page3(d):
 
 
 # ------------------------------------------------------------------ page 4
-def waterfall(v, hp=True, hf=True):
-    W, base = 620, 340
-    S = 280 / v["brut"]
+def evolution_chart(cols, hp=True):
+    """Colonnes de même hauteur (versement programmé mensuel) : effort réel en bas, loyers perçus, puis économie d'impôt."""
+    W, base, top = 620, 372, 70
+    n = len(cols)
     cw = 112
-    ncol = 4 if hp else 3
-    gap = (W - ncol * cw) / (ncol - 1)
-    xs = [i * (cw + gap) for i in range(ncol)]
-    t = lambda x, y, s, col=C["text"], sz=11, w=600, a="middle", ff="Inter": f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{a}" fill="{col}" font-size="{sz}" font-weight="{w}" font-family="{ff}">{s}</text>'
+    gap = (W - n * cw) / (n - 1)
+    xs = [i * (cw + gap) for i in range(n)]
+    brut = cols[0]["brut"]
+    S = (base - top) / brut
+    t = lambda x, y, s, col=C["text"], sz=11, w=600, a="middle": f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{a}" fill="{col}" font-size="{sz}" font-weight="{w}" font-family="Inter">{s}</text>'
     out = f'<line x1="0" y1="{base}" x2="{W}" y2="{base}" stroke="{C["line"]}"/>'
-    def rect(x, a, b, col):
-        return f'<rect x="{x:.1f}" y="{base-b*S:.1f}" width="{cw}" height="{(b-a)*S:.1f}" rx="4" fill="{col}"/>'
-    # colonne 1 : versements programmés (AV, SCPI, PER) + participation au financement, empilés
-    a = 0
-    stack = [("AV", v["av"], C["gold"]), ("SCPI", v["sc"], C["sage"])] + ([("PER", v["per"], C["blue"])] if hp else []) + ([("Financement", v["part"], C["lev"])] if hf else [])
-    for lab, val, col in stack:
-        out += rect(xs[0], a, a + val, col)
-        out += t(xs[0] + cw / 2, base - (a + val / 2) * S + 3.5, f"{lab} {num(val)}", "#2a251f", 8.5, 700)
-        a += val
-    out += t(xs[0] + cw / 2, base - v["brut"] * S - 8, eur(v["brut"]), C["text"], 12)
-    levels, cur, k = [v["brut"]], v["brut"], 1
-    if hp:                                   # économie d'impôt du PER
-        nxt = cur - v["eco"]
-        out += rect(xs[k], nxt, cur, C["blue"])
-        out += t(xs[k] + cw / 2, base - cur * S - 8, f"− {eur(v['eco'])}", C["blue"], 12)
-        cur = nxt; levels.append(cur); k += 1
-    nxt = cur - v["loy_dir"]                 # loyers de la SCPI en direct
-    out += rect(xs[k], nxt, cur, C["sage"])
-    out += t(xs[k] + cw / 2, base - cur * S - 8, f"− {eur(v['loy_dir'])}", C["sage"], 12)
-    cur = nxt; levels.append(cur); k += 1
-    out += rect(xs[k], 0, v["reel"], C["tan"])
-    out += t(xs[k] + cw / 2, base - v["reel"] * S - 9, f"≈ {eur(v['reel'])}", C["tan"], 14, 700)
-    for i, lv in enumerate(levels):
-        y = base - lv * S
-        out += f'<line x1="{xs[i]+cw:.1f}" y1="{y:.1f}" x2="{xs[i+1]:.1f}" y2="{y:.1f}" stroke="{C["muted"]}" stroke-dasharray="3 3"/>'
-    labs = [(["Versement programmé", "mensuel"], C["text"])] + ([(["Économie d’impôt", "PER"], C["blue"])] if hp else []) + [(["Loyers perçus", "SCPI en direct"], C["sage"]), (["Effort réel", "mensuel"], C["text"])]
-    for x, (lines, col) in zip(xs, labs):
-        for k2, ln in enumerate(lines):
-            out += t(x + cw / 2, base + 24 + 16 * k2, ln, col, 11.5, 700)
-    return f'<svg width="{W+16}" height="{base+50-34}" viewBox="-16 34 {W+16} {base+50-34}" style="margin-left:{(698-W)//2-16}px;overflow:visible">{out}</svg>'
+    # légende
+    leg = [(C["tan"], "Effort réel")] + [(C["sage"], "Loyers perçus (SCPI en direct)")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else [])
+    x = 0
+    for col, lab in leg:
+        out += f'<rect x="{x}" y="4" width="10" height="10" rx="2" fill="{col}"/>' + t(x + 16, 13, lab, C["text"], 10.5, 600, "start")
+        x += 16 + len(lab) * 6.1 + 18
+    prev = None
+    for i, c in enumerate(cols):
+        x0 = xs[i]
+        segs = [(c["reel"], C["tan"], None), (c["loy"], C["sage"], None)] + ([(c["eco"], C["blue"], None)] if hp else [])
+        a = 0
+        for k, (val, col, _) in enumerate(segs):
+            if val > 0.0001:
+                out += f'<rect x="{x0:.1f}" y="{base-(a+val)*S:.1f}" width="{cw}" height="{val*S:.1f}" rx="4" fill="{col}"/>'
+                h = val * S
+                if k == 0:
+                    out += t(x0 + cw / 2, base - (a + val / 2) * S + 5, f"≈ {num(val)} €", "#2a251f", 15, 700)
+                elif h >= 15:
+                    out += t(x0 + cw / 2, base - (a + val / 2) * S + 3.5, f"{num(val)} €", "#2a251f", 9.5, 700)
+            a += val
+        out += t(x0 + cw / 2, base - brut * S - 8, eur(brut), C["text"], 12)
+        y_t = base - c["reel"] * S
+        if prev is not None:
+            out += f'<line x1="{xs[i-1]+cw:.1f}" y1="{prev:.1f}" x2="{x0:.1f}" y2="{y_t:.1f}" stroke="{C["tan"]}" stroke-dasharray="3 3"/>'
+        prev = y_t
+        out += t(x0 + cw / 2, base + 22, c["label"], C["text"], 11.5, 700)
+        if i > 0 and cols[0]["reel"] > 0:
+            baisse = round((1 - c["reel"] / cols[0]["reel"]) * 100)
+            out += t(x0 + cw / 2, base + 38, f"effort − {baisse} %", C["tan"], 10.5, 600)
+    return f'<svg width="{W+16}" height="{base+46}" viewBox="-16 0 {W+16} {base+46}" style="margin-left:{(698-W)//2-16}px;overflow:visible">{out}</svg>'
 
 
 def page4(d):
     v = vases(d)
+    evo = evolution(d)
     per_i, per_m, tmi = d["per"]["initial"], d["per"]["mensuel"], d["leviers"].get("tmi", 0)
     te = d["per"]["taux_eco"]
     rows = f"""
@@ -371,7 +374,7 @@ def page4(d):
 <tr><td style="white-space:nowrap">Versements programmés (12&nbsp;×&nbsp;{num(per_m)}&nbsp;€)</td><td>{eur(12*per_m)}</td><td>{eur(12*per_m*te)}</td></tr>
 <tr class="tot"><td>Total 1<sup>re</sup> année</td><td>{eur(per_i+12*per_m)}</td><td>{eur((per_i+12*per_m)*te)}</td></tr>"""
     hp = d.get("has_per", True)
-    lead4 = "L’économie d’impôt du PER et les loyers perçus de la SCPI en direct financent une partie de tes versements." if hp else "Les loyers perçus de la SCPI en direct financent une partie de tes versements."
+    lead4 = "L’économie d’impôt du PER et les loyers perçus de la SCPI en direct financent une partie de tes versements, de plus en plus avec le temps." if hp else "Les loyers perçus de la SCPI en direct financent une partie de tes versements, de plus en plus avec le temps."
     if hp:
         bas4 = f"""<div style="display:grid;grid-template-columns:1.45fr 1fr;gap:16px;margin-top:20px">
   <div class="card" style="padding:13px 15px 8px"><div class="lbl" style="color:{C['blue']}">Le PER, première année (tranche à {int(tmi*100)} %)</div>
@@ -383,13 +386,17 @@ def page4(d):
     else:
         fisc_pct = int(d["hyp"]["fiscalite_comptant"] * 100)
         bas4 = f"""<div class="card" style="margin-top:20px;background:rgba(180,152,104,.12);border-color:rgba(180,152,104,.45)"><div class="lbl" style="color:var(--gold)">Comment ça marche</div>
-    <p style="margin-top:6px">Les loyers comptés ici correspondent à ton versement initial en SCPI en direct ({eur(d["scpi"]["initial"])}) : environ {eur(v["loy_dir"])} par mois, après impôt à {fisc_pct}&nbsp;%.</p>
-    <p style="margin-top:6px">Tes versements mensuels en SCPI produisent à leur tour des loyers, qui s’ajoutent progressivement après un délai de jouissance. Ici, on raisonne en effort lissé sur la durée.</p></div>"""
+    <p style="margin-top:6px">Au départ, les loyers viennent de ton versement initial en SCPI en direct ({eur(d["scpi"]["initial"])}) : environ {eur(v["loy_dir"])} par mois, après impôt à {fisc_pct}&nbsp;%.</p>
+    <p style="margin-top:6px">Tes versements mensuels en SCPI produisent à leur tour des loyers : c’est ce qui fait baisser ton effort au fil des années.</p></div>"""
+    note4 = (f'<p style="margin:12px 0 0 {(698-620)//2}px;max-width:620px;font-size:9px;line-height:1.5;color:var(--muted)">Projection : loyers de la SCPI en direct à {pctfr(d["hyp"]["scpi_brut"])}&nbsp;% par an, '
+             f'imposés à {int(d["hyp"]["fiscalite_comptant"]*100)}&nbsp;%, non garantis' + (' ; économie d’impôt à tranche constante' if hp else '')
+             + (' ; participation au financement gardée constante ici, elle baisse en réalité (page 6)' if d.get('financement') else '') + '.</p>')
     inner = f"""
-<h2 style="font-size:41px;line-height:1.04;text-wrap:balance">Chaque mois, ton effort réel est inférieur à ce que tu verses.</h2>
+<h2 style="font-size:41px;line-height:1.04;text-wrap:balance">Ton effort réel est inférieur à ce que tu verses, et il baisse.</h2>
 <p class="lead">{lead4}</p>
 <div class="rule"></div>
-<div style="margin-top:22px">{waterfall(v, hp, bool(d.get('financement')))}</div>
+<div style="margin-top:22px">{evolution_chart(evo, hp)}</div>
+{note4}
 {bas4}
 """
     return shell(4, 1, inner, d)
