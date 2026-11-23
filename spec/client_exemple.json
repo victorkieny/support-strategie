@@ -20,11 +20,13 @@
   "composition": [
    {
     "libelle": "Livret A",
-    "montant": 15000
+    "montant": 15000,
+    "note": "disponible"
    },
    {
     "libelle": "LDDS",
-    "montant": 12000
+    "montant": 12000,
+    "note": "disponible"
    },
    {
     "libelle": "PEA",
