@@ -128,7 +128,7 @@ def page1(d):
     mens = prog + (d['fin']['effort'] if hf else 0)
     ori = [f"{p['libelle']}&nbsp;({eur(p['montant'])})" for p in s["origine"]]
     ori_txt = ori[0] if len(ori) == 1 else ", ".join(ori[:-1]) + " et " + ori[-1]
-    ini_sub = f"Ce que tu peux investir dès le départ, prélevé sur {ori_txt}.<br><span style='color:var(--text)'>Il te reste {eur(prec)} d’épargne de précaution, disponible.</span>"
+    ini_sub = f"Ce que tu peux investir dès le départ, prélevé sur {ori_txt}."
     mens_sub = f"Investi chaque mois de façon automatique, dont {num(d['fin']['effort'])}&nbsp;€ pour le financement." if hf else "Investi chaque mois de façon automatique."
     cap_lev = (lev(C['lev'], 'Capacité de financement', '<span style="position:relative;display:inline-block"><span style="position:absolute;top:-11px;left:1px;font-size:10px;letter-spacing:.04em;font-family:Inter,sans-serif;color:var(--text)">jusqu’à</span>' + eur(L['capacite_mensualite']) + '<span style="font-size:14px;letter-spacing:.02em">/mois</span></span>', 'Jusqu’où tu peux aller chaque mois. À toi de choisir, dans la limite de cette mensualité, ce que tu consacres au levier du financement.')) if hf else ""
     inner = f"""
