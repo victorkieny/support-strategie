@@ -104,8 +104,26 @@ def page1(d):
     prec = s["precaution"]["montant"]
     inv = s["investir"]["montant"]
     tot = prec + inv
-    seg = lambda m, col: f'<div style="flex:{m};background:{col}"></div>'
-    bar = seg(prec, C["prec"]) + seg(inv, C["gold"])
+    # composition actuelle du patrimoine, telle que relevée (un poste = un libellé et un montant), dans l'ordre fourni
+    comp = s["composition"]
+    pal = ["#9aa3ad", "#b49868", "#86a08a", "#758aa4", "#c3af8d", "#5b9a6b", "#a98f8a", "#7e8f7f"]
+    tot_c = sum(p["montant"] for p in comp)
+    brut = [p["montant"] * 100 / tot_c for p in comp]
+    pcts = [int(x) for x in brut]                      # arrondi au plus fort reste : la somme fait toujours 100
+    for i in sorted(range(len(comp)), key=lambda i: brut[i] - pcts[i], reverse=True)[:100 - sum(pcts)]:
+        pcts[i] += 1
+    bar = "".join(f'<div style="flex:{p["montant"]};background:{pal[i]}"></div>' for i, p in enumerate(comp))
+    def ligne(i, p):
+        return (f'<div style="display:flex;align-items:center;gap:9px;padding:5px 0;border-top:1px solid rgba(255,255,255,.08);font-size:11.5px">'
+                f'<span style="width:8px;height:8px;border-radius:50%;background:{pal[i]};flex:none"></span>'
+                f'<span style="flex:1">{p["libelle"]}</span><span style="color:var(--muted);font-size:10px;width:34px;text-align:right">{pcts[i]}&nbsp;%</span>'
+                f'<span style="width:78px;text-align:right;font-weight:600">{eur(p["montant"])}</span></div>')
+    lignes = [ligne(i, p) for i, p in enumerate(comp)]
+    if len(comp) > 4:
+        mid = (len(comp) + 1) // 2
+        corps = f'<div style="display:grid;grid-template-columns:1fr 1fr;column-gap:26px"><div>{"".join(lignes[:mid])}</div><div>{"".join(lignes[mid:])}</div></div>'
+    else:
+        corps = "".join(lignes)
     prog = d["av"]["mensuel"] + d["scpi"]["mensuel"] + d["per"]["mensuel"]
     def col(c, t, m, sub):
         return f'<div><div style="height:2px;background:{c};margin-bottom:10px"></div><div class="lbl" style="color:{c}">{t}</div><div class="big" style="font-size:30px;margin:8px 0 6px">{eur(m)}</div><p style="font-size:10.5px;color:var(--muted)">{sub}</p></div>'
@@ -118,6 +136,9 @@ def page1(d):
     n_lev = 2 + (1 if hp else 0) + (1 if hf else 0)       # versement initial, versement mensuel, + impôt (PER), + capacité de financement
     ini = d['av']['initial'] + d['scpi']['initial'] + d['per']['initial'] + (d['fin']['apport'] if hf else 0)
     mens = prog + (d['fin']['effort'] if hf else 0)
+    ori = [f"{p['libelle']}&nbsp;({eur(p['montant'])})" for p in s["origine"]]
+    ori_txt = ori[0] if len(ori) == 1 else ", ".join(ori[:-1]) + " et " + ori[-1]
+    ini_sub = f"Ce que tu peux investir dès le départ, prélevé sur {ori_txt}.<br><span style='color:var(--text)'>Il te reste {eur(prec)} d’épargne de précaution, disponible.</span>"
     mens_sub = f"Investi chaque mois de façon automatique, dont {num(d['fin']['effort'])}&nbsp;€ pour le financement." if hf else "Investi chaque mois de façon automatique."
     cap_lev = (lev(C['lev'], 'Capacité de financement', '<span style="position:relative;display:inline-block"><span style="position:absolute;top:-11px;left:1px;font-size:10px;letter-spacing:.04em;font-family:Inter,sans-serif;color:var(--text)">jusqu’à</span>' + eur(L['capacite_mensualite']) + '<span style="font-size:14px;letter-spacing:.02em">/mois</span></span>', 'Jusqu’où tu peux aller chaque mois. À toi de choisir, dans la limite de cette mensualité, ce que tu consacres au levier du financement.')) if hf else ""
     inner = f"""
@@ -126,14 +147,12 @@ def page1(d):
 <p class="lead">Ce qui a été défini lors de notre rendez-vous du {d['date_rdv']}, et ce que cela donne dans le temps.</p>
 <div class="rule"></div>
 
-<div style="margin-top:44px">
+<div style="margin-top:34px">
   <div class="sec"><span class="n">01</span><span class="t">Situation initiale</span></div>
   <div class="card" style="padding:24px 22px 22px">
-    <div class="sbar" style="height:20px;margin-bottom:18px">{bar}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px">
-      {col(C['prec'], 'Épargne de précaution', prec, 'Ton coussin de sécurité : disponible, peu rémunéré')}
-      {col(C['gold'], 'Épargne à investir', inv, 'Ce qui va travailler, avec un rôle précis')}
-    </div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px"><span class="lbl">Composition actuelle de ton patrimoine</span><span class="big" style="font-size:22px">{eur(tot_c)}</span></div>
+    <div class="sbar" style="height:20px;margin-bottom:12px">{bar}</div>
+    {corps}
   </div>
 </div>
 
@@ -149,7 +168,7 @@ def page1(d):
 <div>
   <div class="sec"><span class="n">03</span><span class="t">Les {n_lev} leviers</span></div>
   <div class="cols4" style="{'' if n_lev == 4 else 'grid-template-columns:' + ' '.join(['1fr'] * n_lev)}">
-    {lev(C['gold'], 'Versement initial', eur(ini), 'Ce que tu peux investir dès le départ.')}
+    {lev(C['gold'], 'Versement initial', eur(ini), ini_sub)}
     {lev(C['sage'], 'Versement mensuel', eur(mens) + '<span style="font-size:14px;letter-spacing:.02em">/mois</span>', mens_sub)}
     {imp_lev}
     {cap_lev}

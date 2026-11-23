@@ -16,7 +16,27 @@
       "label": "Livret A",
       "montant": 3000
     },
-    "investir": 10000
+    "investir": 10000,
+    "composition": [
+      {
+        "libelle": "Livret A",
+        "montant": 6000
+      },
+      {
+        "libelle": "Compte courant",
+        "montant": 7000
+      }
+    ],
+    "origine": [
+      {
+        "libelle": "Livret A",
+        "montant": 3000
+      },
+      {
+        "libelle": "Compte courant",
+        "montant": 7000
+      }
+    ]
   },
   "objectifs": [
     "Faire fructifier ton épargne tout en la gardant disponible",

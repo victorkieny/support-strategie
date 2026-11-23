@@ -16,7 +16,31 @@
       "label": "Livret A",
       "montant": 8000
     },
-    "investir": 24000
+    "investir": 24000,
+    "composition": [
+      {
+        "libelle": "Livret A",
+        "montant": 8000
+      },
+      {
+        "libelle": "LDDS",
+        "montant": 12000
+      },
+      {
+        "libelle": "PEA",
+        "montant": 12000
+      }
+    ],
+    "origine": [
+      {
+        "libelle": "LDDS",
+        "montant": 12000
+      },
+      {
+        "libelle": "PEA",
+        "montant": 12000
+      }
+    ]
   },
   "objectifs": [
     "Faire fructifier ton épargne tout en la gardant disponible",

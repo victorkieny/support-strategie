@@ -16,7 +16,31 @@
    "label": "Livret A",
    "montant": 15000
   },
-  "investir": 27000
+  "investir": 27000,
+  "composition": [
+   {
+    "libelle": "Livret A",
+    "montant": 15000
+   },
+   {
+    "libelle": "LDDS",
+    "montant": 12000
+   },
+   {
+    "libelle": "PEA",
+    "montant": 15000
+   }
+  ],
+  "origine": [
+   {
+    "libelle": "LDDS",
+    "montant": 12000
+   },
+   {
+    "libelle": "PEA",
+    "montant": 15000
+   }
+  ]
  },
  "objectifs": [
   "Compléter tes revenus régulièrement",

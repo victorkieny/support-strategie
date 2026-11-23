@@ -24,6 +24,26 @@ def valider(c):
     ini = c["av"]["initial"] + c["scpi"]["initial"] + c["per"]["initial"] + (fi.get("apport", 750) if fi["retenu"] else 0)
     if ini != c["situation"]["investir"]:
         E.append(f"AV + SCPI + PER (initiaux)" + (" + apport" if fi["retenu"] else "") + f" = {ini} € ≠ épargne à investir {c['situation']['investir']} €")
+    comp = c["situation"].get("composition")
+    if not comp:
+        E.append("situation.composition requise : patrimoine actuel du client, un poste par ligne (libelle, montant), tel que relevé au R1 ; à demander, jamais à déduire")
+    else:
+        if not (1 <= len(comp) <= 8) or any(not p.get("libelle") or not p.get("montant", 0) > 0 for p in comp):
+            E.append("situation.composition : 1 à 8 postes, chacun avec libelle et montant > 0")
+        elif sum(p["montant"] for p in comp) < c["situation"]["precaution"]["montant"] + c["situation"]["investir"]:
+            E.append(f"situation.composition ({sum(p['montant'] for p in comp)} €) inférieure à épargne de précaution + épargne à investir ({c['situation']['precaution']['montant'] + c['situation']['investir']} €) : où se trouvent ces sommes ?")
+    ori = c["situation"].get("origine")
+    if not ori:
+        E.append("situation.origine requise : d'où vient l'épargne à investir, poste par poste (libelle identique à la composition, montant) ; à demander, jamais à déduire")
+    elif comp:
+        lignes = {p["libelle"]: p["montant"] for p in comp if p.get("libelle")}
+        if sum(p["montant"] for p in ori) != c["situation"]["investir"]:
+            E.append(f"situation.origine : total {sum(p['montant'] for p in ori)} € ≠ épargne à investir {c['situation']['investir']} €")
+        for p in ori:
+            if p["libelle"] not in lignes:
+                E.append(f"situation.origine : « {p['libelle']} » absent de la composition")
+            elif p["montant"] > lignes[p["libelle"]]:
+                E.append(f"situation.origine : {p['libelle']} {p['montant']} € > montant détenu {lignes[p['libelle']]} €")
     L = c.get("leviers", {})
     has_per = c["per"]["initial"] + c["per"]["mensuel"] > 0
     if (has_per or "tmi" in L) and L.get("tmi") not in TMI_VALIDES:

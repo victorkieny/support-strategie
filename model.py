@@ -23,7 +23,7 @@ def prepare(c, version=None):
         "passe": c["rdv"].get("passe", "brouillon"),
         "fictif": c.get("fictif", False),                     # exemples et tests uniquement
         "version": version or datetime.date.today().strftime("%d/%m/%Y"),
-        "situation": {"precaution": c["situation"]["precaution"], "investir": {"montant": c["situation"]["investir"]}},
+        "situation": {"precaution": c["situation"]["precaution"], "investir": {"montant": c["situation"]["investir"]}, "composition": c["situation"].get("composition", []), "origine": c["situation"].get("origine", [])},
         "objectifs": c["objectifs"],
         "financement": fi["retenu"],
         "docs_fournis": c.get("docs_fournis", []),
