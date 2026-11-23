@@ -655,9 +655,14 @@ def page7(d):
     pc = lambda x: str(round(x * 100, 1)).replace(".", ",").replace(",0", "")
     # --- frise : deux lignes parallèles après la validation
     nodes = []   # (x, y, num, couleur, titre, sous-titre)
-    nodes.append((38, ys, 1, C["text"], "Validation", "de la stratégie<br>et des montants"))
-    xa = [210, 395, 580]
     hp = d.get("has_per", True)
+    # frise toujours centrée sur la page : la validation et la dernière souscription sont à égale distance des bords,
+    # les étapes intermédiaires sont réparties à intervalles réguliers (3 ou 4 étapes selon le PER)
+    n_et = 1 + 1 + int(hp) + 1
+    marge = 78
+    px = [marge + k * (W - 2 * marge) / (n_et - 1) for k in range(n_et)]
+    x1, xa = px[0], px[1:]
+    nodes.append((x1, ys, 1, C["text"], "Validation", "de la stratégie<br>et des montants"))
     top = [(C["sage"], "SCPI en direct", f"{eur(d['scpi']['initial'])}<br>+ {num(d['scpi']['mensuel'])}\u00a0€/mois")]
     if hp:
         top.append((C["blue"], "PER", f"{eur(d['per']['initial'])}<br>+ {num(d['per']['mensuel'])}\u00a0€/mois<br><b style='color:{C['blue']}'>avant le 31/12</b>"))
@@ -672,10 +677,10 @@ def page7(d):
     svg += f'<path d="M{xa[0]} 40 H{xa[len(top) - 1]}" stroke="{C["line"]}" stroke-width="3"/>'
     if hf:
         svg += f'<path d="M{xa[0]} 196 H{xa[1]}" stroke="{C["line"]}" stroke-width="3"/>'
-        svg += f'<path d="M56 118 C120 118 130 40 {xa[0]-20} 40" fill="none" stroke="{C["gold"]}" stroke-width="1.6" marker-end="url(#ah7)"/>'
-        svg += f'<path d="M56 118 C120 118 130 196 {xa[0]-20} 196" fill="none" stroke="{C["gold"]}" stroke-width="1.6" marker-end="url(#ah7)"/>'
+        svg += f'<path d="M{x1+18:g} 118 C{x1+82:g} 118 {x1+92:g} 40 {xa[0]-20:g} 40" fill="none" stroke="{C["gold"]}" stroke-width="1.6" marker-end="url(#ah7)"/>'
+        svg += f'<path d="M{x1+18:g} 118 C{x1+82:g} 118 {x1+92:g} 196 {xa[0]-20:g} 196" fill="none" stroke="{C["gold"]}" stroke-width="1.6" marker-end="url(#ah7)"/>'
     else:                                                     # une seule flèche : de la validation vers la ligne des souscriptions
-        svg += f'<path d="M58 40 H{xa[0]-22}" fill="none" stroke="{C["gold"]}" stroke-width="1.6" marker-end="url(#ah7)"/>'
+        svg += f'<path d="M{x1+20:g} 40 H{xa[0]-22:g}" fill="none" stroke="{C["gold"]}" stroke-width="1.6" marker-end="url(#ah7)"/>'
     for x, y, n, col, t1, t2 in nodes:
         svg += f'<circle cx="{x}" cy="{y}" r="17" fill="{col}"/><text x="{x}" y="{y+5}" text-anchor="middle" fill="#2a251f" font-size="14" font-weight="700" font-family="Bodoni Moda">{n}</text>'
     svg += "</svg>"
@@ -708,7 +713,7 @@ def page7(d):
 <h2 style="font-size:41px;line-height:1.04;text-wrap:balance">Les prochaines étapes, dans l’ordre.</h2>
 <p class="lead">Tout commence par ta validation de la stratégie, puis viennent les souscriptions{lead_fin}.{per_lead}</p>
 <div class="rule"></div>
-<div style="margin-top:18px;margin-left:38px">{frise}</div>
+<div style="margin-top:18px">{frise}</div>
 <div class="card" style="margin-top:34px;padding:14px 20px"><div class="lbl" style="color:var(--gold)">À préparer</div><table style="margin-top:6px;width:100%"><tr><td class="lbl" style="font-size:8.5px;padding-bottom:4px">Document</td><td class="lbl" style="font-size:8.5px;padding-bottom:4px;width:1%;white-space:nowrap">Statut</td></tr>{docs_html}</table></div>
 <div class="card" style="margin-top:28px;padding:13px 20px;background:rgba(180,152,104,.08);border-color:rgba(180,152,104,.4)"><div class="lbl" style="color:var(--gold)">À savoir</div>
 <div style="margin-top:8px">{sav}</div></div>
