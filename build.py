@@ -117,7 +117,7 @@ def page1(d):
         note = f" · {p['note']}" if p.get("note") else ""
         return (f'<div><div style="height:2px;background:{pal[i]};margin-bottom:10px"></div>'
                 f'<div style="font-size:12.5px">{p["libelle"]}</div>'
-                f'<div class="big" style="font-size:24px;margin:5px 0 4px">{eur(p["montant"])}</div>'
+                f'<div class="big" style="font-size:22px;margin:5px 0 4px">{eur(p["montant"])}</div>'
                 f'<div style="font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600">{("%.1f" % (pcts[i] / 10)).replace(".", ",")}&nbsp;%{note}</div></div>')
     corps = f'<div style="display:grid;grid-template-columns:repeat({min(len(comp), 4)},1fr);gap:18px 18px">{"".join(poste(i, p) for i, p in enumerate(comp))}</div>'
     prog = d["av"]["mensuel"] + d["scpi"]["mensuel"] + d["per"]["mensuel"]
@@ -146,7 +146,7 @@ def page1(d):
 <div style="margin-top:34px">
   <div class="sec"><span class="n">01</span><span class="t">Situation initiale</span></div>
   <div class="card" style="padding:24px 22px 22px">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px"><span class="lbl">Composition actuelle de ton patrimoine</span><span class="big" style="font-size:22px">{eur(tot_c)}</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px"><span class="lbl">Composition actuelle de ton patrimoine</span><span class="big" style="font-size:24px">{eur(tot_c)}</span></div>
     <div class="sbar" style="height:20px;margin-bottom:16px">{bar}</div>
     {corps}
   </div>
