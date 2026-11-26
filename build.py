@@ -287,9 +287,11 @@ def page3(d):
 <div style="font-family:'Bodoni Moda',serif;font-size:25px;margin:10px 0 6px">{name}</div>
 <p style="font-size:11.5px;line-height:1.55;color:var(--text);min-height:36px">{role}</p>
 </div>"""
-    # camembert : capital placé au départ par le client (hors financement, compensé par la dette)
+    # camembert : versement initial, mêmes montants que la colonne « Au départ » du tableau (apport du financement inclus)
     parts = [(d["av"]["initial"], C["gold"], "Assurance-vie"), (d["scpi"]["initial"], C["sage"], "SCPI en direct"),
              (d["per"]["initial"], C["blue"], "PER")]
+    if hf:
+        parts.append((f["apport"], C["lev"], "SCPI en financement"))
     parts = [p for p in parts if p[0] > 0]
     tot = sum(p[0] for p in parts)
     pie = f'<svg width="230" height="230" viewBox="0 0 260 260">{donut([(v, c) for v, c, _ in parts], 130, 130, 120, 70, tot)}' \
