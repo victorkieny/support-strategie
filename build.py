@@ -391,7 +391,7 @@ def evolution_chart_reinv(cols, hp=True, hf=False):
         if haut <= base - top + 0.01:
             break
         S *= (base - top) / haut
-    leg = [(C["tan"], "Effort réel")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else []) + ([(C["lev"], "Loyer perçu (SCPI en financement)")] if hf else []) + [(C["sage"], "Loyer réinvesti (SCPI en direct)")]
+    leg = [(C["tan"], "Effort réel")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else []) + ([(C["lev"], "Loyers perçus (SCPI en financement)")] if hf else []) + [(C["sage"], "Loyers réinvestis (SCPI en direct)")]
     x, ly = 0, 4
     for col, lab in leg:
         larg = 16 + len(lab) * 6.1
