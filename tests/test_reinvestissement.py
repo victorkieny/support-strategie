@@ -1,7 +1,7 @@
 """Test du réinvestissement des loyers de la SCPI en direct (scpi.reinvestir_loyers = true).
 Contrôles : valeurs de patrimoine et de « poche » à 30 ans issues du simulateur projection.html (commit d621fc6, option « Réinvestir les loyers »),
-aucun loyer perçu de la SCPI en direct, page 4 en « Loyers réinvestis » (somme investie croissante, effort constant
-seulement par le financement), et refus de gen.py si la question n'a pas été posée (champ absent).
+aucun loyer perçu de la SCPI en direct, page 4 en « Loyers réinvestis » (somme investie croissante, effort constant)
+et refus de gen.py si la question n'a pas été posée (champ absent).
 Usage : python3 tests/test_reinvestissement.py"""
 import copy, json, os, subprocess, sys, tempfile
 ICI = os.path.dirname(os.path.abspath(__file__))
