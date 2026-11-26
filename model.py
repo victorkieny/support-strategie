@@ -171,15 +171,16 @@ if __name__ == "__main__":
 
 def evolution_reinv(d):
     """Page 4, loyers de la SCPI en direct réinvestis : la quantité investie par mois augmente, l'effort réel stagne.
-    Colonnes : effort réel (tranche, bas), économie d'impôt du PER, loyers de la SCPI financée qui remboursent le financement,
-    loyers réinvestis de la SCPI en direct (haut, croissants). Au 1er mois aucun loyer n'est encore réinvesti (délai de jouissance).
+    Colonnes : effort réel (bas), économie d'impôt du PER, loyers réinvestis de la SCPI en direct (haut, croissants). Les loyers de la
+    SCPI financée ne figurent pas : ils remboursent la banque, ils ne sont pas investis ; leur seule trace est la baisse de l'effort
+    (participation au financement réduite). Au 1er mois aucun loyer n'est encore réinvesti (délai de jouissance).
     Les loyers réinvestis viennent du simulateur (projection.html, reinvestir) : réinvestis une fois par an dans le simulateur,
     affichés ici en équivalent mensuel."""
     v = vases(d)
     sim = simulate(d, HORIZONS_EFFORT)
     l1_fin = sim["series"][1]["loy_fin_mois"]
     base_effort = v["brut"] - v["eco"]
-    cols = [dict(label="Au 1er mois", effort=base_effort, eco=v["eco"], fin=0.0, reinv=0.0)]
+    cols = [dict(label="Au 1er mois", effort=base_effort, eco=v["eco"], reinv=0.0)]
     for h in HORIZONS_EFFORT:
         r = sim[h]
         fin_loy, part_h = 0.0, v["part"]
@@ -189,7 +190,7 @@ def evolution_reinv(d):
             else:                                 # la participation baisse avec le loyer de la SCPI financée
                 fin_loy = max(r["loy_fin_mois"] - l1_fin, 0.0)
         effort = max(v["brut"] - v["part"] + part_h - v["eco"] - fin_loy, 0.0)
-        cols.append(dict(label=f"Dans {h} ans", effort=effort, eco=v["eco"], fin=fin_loy, reinv=r["reinv_mois"]))
+        cols.append(dict(label=f"Dans {h} ans", effort=effort, eco=v["eco"], reinv=r["reinv_mois"]))
     for c in cols:
-        c["total"] = c["effort"] + c["eco"] + c["fin"] + c["reinv"]
+        c["total"] = c["effort"] + c["eco"] + c["reinv"]
     return cols

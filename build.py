@@ -372,8 +372,8 @@ def evolution_chart(cols, hp=True):
     return f'<svg width="{W+16}" height="{base+46}" viewBox="-16 0 {W+16} {base+46}" style="margin-left:{(698-W)//2-16}px;overflow:visible">{out}</svg>'
 
 
-def evolution_chart_reinv(cols, hp=True, hf=False):
-    """Loyers réinvestis : effort réel en bas (qui stagne), puis économie d'impôt, loyers affectés au financement, loyers réinvestis (croissants).
+def evolution_chart_reinv(cols, hp=True):
+    """Loyers réinvestis : effort réel en bas (qui stagne), puis économie d'impôt, loyers réinvestis (croissants).
     La hauteur de colonne est la quantité investie par mois ; la première est la plus petite, la dernière la plus grande."""
     W, base, top = 620, (282 if hp else 372), 70
     n = len(cols)
@@ -383,7 +383,7 @@ def evolution_chart_reinv(cols, hp=True, hf=False):
     t = lambda x, y, s, col=C["text"], sz=11, w=600, a="middle": f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{a}" fill="{col}" font-size="{sz}" font-weight="{w}" font-family="Inter">{s}</text>'
     out = f'<line x1="0" y1="{base}" x2="{W}" y2="{base}" stroke="{C["line"]}"/>'
     def cases(c):
-        return [(c["effort"], C["tan"])] + ([(c["eco"], C["blue"])] if hp else []) + ([(c["fin"], C["lev"])] if hf else []) + [(c["reinv"], C["sage"])]
+        return [(c["effort"], C["tan"])] + ([(c["eco"], C["blue"])] if hp else []) + [(c["reinv"], C["sage"])]
     # échelle : la colonne la plus haute tient dans la place disponible, chaque case non nulle ayant au moins HMIN de hauteur (montant lisible dedans)
     S = (base - top) / max(c["total"] for c in cols)
     for _ in range(30):
@@ -391,7 +391,7 @@ def evolution_chart_reinv(cols, hp=True, hf=False):
         if haut <= base - top + 0.01:
             break
         S *= (base - top) / haut
-    leg = [(C["tan"], "Effort réel mensuel")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else []) + ([(C["lev"], "Loyers perçus (SCPI en financement)")] if hf else []) + [(C["sage"], "Loyers réinvestis (SCPI en direct)")]
+    leg = [(C["tan"], "Effort réel mensuel")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else []) + [(C["sage"], "Loyers réinvestis (SCPI en direct)")]
     x, ly = 0, 4
     for col, lab in leg:
         larg = 16 + len(lab) * 6.1
@@ -469,7 +469,6 @@ def page4(d):
 <tr><td style="white-space:nowrap">Versements programmés (12&nbsp;×&nbsp;{num(per_m)}&nbsp;€)</td><td>{eur(12*per_m)}</td><td>{eur(12*per_m*te)}</td></tr>
 <tr class="tot"><td>Total 1<sup>re</sup> année</td><td>{eur(per_i+12*per_m)}</td><td>{eur((per_i+12*per_m)*te)}</td></tr>"""
     hp = d.get("has_per", True)
-    hf4 = bool(d["fin"])
     hs = d["scpi"]["initial"] > 0 or d["scpi"]["mensuel"] > 0 or bool(d["fin"])    # au moins une SCPI (en direct ou financée)
     lead4 = "L’économie d’impôt du PER et les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps." if hp else "Les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps."
     if d["reinv"]:      # loyers réinvestis (sous-titre validé par Victor) : ils ne sont pas perçus, donc ne financent pas les versements
@@ -496,7 +495,7 @@ def page4(d):
     note4 = (f'<p style="margin:12px 0 0 {(698-620)//2}px;max-width:660px;font-size:9px;line-height:1.5;color:var(--muted)">Projection : loyers de la SCPI en direct à {pctfr(d["hyp"]["scpi_brut"])}&nbsp;% par an, '
              f'imposés à {int(d["hyp"]["fiscalite_comptant"]*100)}&nbsp;%, ' + ('réinvestis une fois par an (montants affichés en équivalent mensuel), ' if d["reinv"] else '') + f'parts revalorisées de {pctfr(d["hyp"]["scpi_reval"])}&nbsp;% par an' + (' ; économie d’impôt du PER à tranche constante' if hp else '') + '.</p>')
     if hs:      # au moins une SCPI : l'effort réel est montré dans le temps
-        graphe4 = evolution_chart_reinv(evolution_reinv(d), hp, hf4) if d["reinv"] else evolution_chart(evolution(d), hp)
+        graphe4 = evolution_chart_reinv(evolution_reinv(d), hp) if d["reinv"] else evolution_chart(evolution(d), hp)
     else:       # PER seul : les loyers n'existent pas, l'économie d'impôt est constante : cascade du 1er mois
         lead4 = "L’économie d’impôt du PER finance une partie de tes versements."
         note4 = ""
