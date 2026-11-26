@@ -463,7 +463,7 @@ def page4(d):
     hs = d["scpi"]["initial"] > 0 or d["scpi"]["mensuel"] > 0 or bool(d["fin"])    # au moins une SCPI (en direct ou financée)
     lead4 = "L’économie d’impôt du PER et les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps." if hp else "Les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps."
     if d["reinv"]:      # loyers réinvestis (sous-titre validé par Victor) : ils ne sont pas perçus, donc ne financent pas les versements
-        lead4 = ("L’économie d’impôt du PER et les loyers réinvestis de tes SCPI font croître ce que tu investis, sans augmenter ton effort." if hp
+        lead4 = ("L’économie d’impôt du PER réduit ton effort réel, et les loyers réinvestis de tes SCPI font croître ce que tu investis." if hp
                  else "Les loyers réinvestis de tes SCPI font croître ce que tu investis, sans augmenter ton effort.")
     txt_per = (f"Tes versements sur le PER sont déductibles de ton revenu imposable. Tu les déclares au printemps suivant : l’économie d’impôt, "
                f"ici à {int(tmi*100)}&nbsp;%, arrive sur ton compte courant pendant l’été. La première année, tu avances donc les versements avant ce remboursement. "
