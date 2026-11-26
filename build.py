@@ -327,6 +327,9 @@ def page3(d):
 
 
 # ------------------------------------------------------------------ page 4
+HMIN = 16      # hauteur minimale d'une case de la page 4 (le montant s'écrit dedans)
+
+
 def evolution_chart(cols, hp=True):
     """Colonnes de même hauteur (versement programmé mensuel) : effort réel en bas, loyers perçus, puis économie d'impôt."""
     W, base, top = 620, (312 if hp else 372), 70
@@ -347,18 +350,17 @@ def evolution_chart(cols, hp=True):
     prev = None
     for i, c in enumerate(cols):
         x0 = xs[i]
-        segs = [(c["reel"], C["tan"], None), (c["loy"], C["sage"], None)] + ([(c["eco"], C["blue"], None)] if hp else [])
-        a = 0
-        for k, (val, col, _) in enumerate(segs):
+        segs = [(c["reel"], C["tan"]), (c["loy"], C["sage"])] + ([(c["eco"], C["blue"])] if hp else [])
+        # chaque case porte son montant : une petite case garde une hauteur minimale lisible, prise sur la case d'effort (colonne de hauteur constante)
+        hs = [max(val * S, HMIN) if k and val > 0.0001 else val * S for k, (val, _) in enumerate(segs)]
+        hs[0] = brut * S - sum(hs[1:])
+        y = base
+        for k, ((val, col), h) in enumerate(zip(segs, hs)):
             if val > 0.0001:
-                out += f'<rect x="{x0:.1f}" y="{base-(a+val)*S:.1f}" width="{cw}" height="{val*S:.1f}" rx="4" fill="{col}"/>'
-                h = val * S
-                if k == 0:
-                    out += t(x0 + cw / 2, base - (a + val / 2) * S + 5, f"≈ {num(val)} €", "#2a251f", 15, 700)
-                elif h >= 15:
-                    out += t(x0 + cw / 2, base - (a + val / 2) * S + 3.5, f"{num(val)} €", "#2a251f", 9.5, 700)
-            a += val
-        out += t(x0 + cw / 2, base - brut * S - 8, eur(brut), C["text"], 12)
+                y -= h
+                out += f'<rect x="{x0:.1f}" y="{y:.1f}" width="{cw}" height="{h:.1f}" rx="4" fill="{col}"/>'
+                out += t(x0 + cw / 2, y + h / 2 + (5 if k == 0 else 3.5), f"{num(val)} €", "#2a251f", 15 if k == 0 else 9.5, 700)
+        out += t(x0 + cw / 2, base - brut * S - 8, eur(brut), C["text"], 15, 700)
         y_t = base - c["reel"] * S
         if prev is not None:
             out += f'<line x1="{xs[i-1]+cw:.1f}" y1="{prev:.1f}" x2="{x0:.1f}" y2="{y_t:.1f}" stroke="{C["tan"]}" stroke-dasharray="3 3"/>'
@@ -378,9 +380,17 @@ def evolution_chart_reinv(cols, hp=True, hf=False):
     cw = 112
     gap = (W - n * cw) / (n - 1)
     xs = [i * (cw + gap) for i in range(n)]
-    S = (base - top) / max(c["total"] for c in cols)
     t = lambda x, y, s, col=C["text"], sz=11, w=600, a="middle": f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{a}" fill="{col}" font-size="{sz}" font-weight="{w}" font-family="Inter">{s}</text>'
     out = f'<line x1="0" y1="{base}" x2="{W}" y2="{base}" stroke="{C["line"]}"/>'
+    def cases(c):
+        return [(c["effort"], C["tan"])] + ([(c["eco"], C["blue"])] if hp else []) + ([(c["fin"], C["lev"])] if hf else []) + [(c["reinv"], C["sage"])]
+    # échelle : la colonne la plus haute tient dans la place disponible, chaque case non nulle ayant au moins HMIN de hauteur (montant lisible dedans)
+    S = (base - top) / max(c["total"] for c in cols)
+    for _ in range(30):
+        haut = max(sum(max(v * S, HMIN) if (k and v > 0.0001) else v * S for k, (v, _) in enumerate(cases(c))) for c in cols)
+        if haut <= base - top + 0.01:
+            break
+        S *= (base - top) / haut
     leg = [(C["tan"], "Effort réel")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else []) + ([(C["lev"], "Loyers de la SCPI financée")] if hf else []) + [(C["sage"], "Loyers réinvestis (SCPI)")]
     x = 0
     for col, lab in leg:
@@ -389,18 +399,14 @@ def evolution_chart_reinv(cols, hp=True, hf=False):
     prev = None
     for i, c in enumerate(cols):
         x0 = xs[i]
-        segs = [(c["effort"], C["tan"])] + ([(c["eco"], C["blue"])] if hp else []) + ([(c["fin"], C["lev"])] if hf else []) + [(c["reinv"], C["sage"])]
-        a = 0
-        for k, (val, col) in enumerate(segs):
+        y = base
+        for k, (val, col) in enumerate(cases(c)):
             if val > 0.0001:
-                h = val * S
-                out += f'<rect x="{x0:.1f}" y="{base-(a+val)*S:.1f}" width="{cw}" height="{h:.1f}" rx="4" fill="{col}"/>'
-                if k == 0:
-                    out += t(x0 + cw / 2, base - (a + val / 2) * S + 5, f"≈ {num(val)} €", "#2a251f", 15, 700)
-                elif h >= 15:
-                    out += t(x0 + cw / 2, base - (a + val / 2) * S + 3.5, f"{num(val)} €", "#2a251f", 9.5, 700)
-            a += val
-        out += t(x0 + cw / 2, base - c["total"] * S - 8, eur(c["total"]), C["text"], 12)
+                h = max(val * S, HMIN) if k else val * S
+                y -= h
+                out += f'<rect x="{x0:.1f}" y="{y:.1f}" width="{cw}" height="{h:.1f}" rx="4" fill="{col}"/>'
+                out += t(x0 + cw / 2, y + h / 2 + (5 if k == 0 else 3.5), f"{num(val)} €", "#2a251f", 15 if k == 0 else 9.5, 700)
+        out += t(x0 + cw / 2, y - 8, eur(c["total"]), C["text"], 15, 700)
         y_t = base - c["effort"] * S
         if prev is not None:
             out += f'<line x1="{xs[i-1]+cw:.1f}" y1="{prev:.1f}" x2="{x0:.1f}" y2="{y_t:.1f}" stroke="{C["tan"]}" stroke-dasharray="3 3"/>'
@@ -431,15 +437,15 @@ def waterfall(v, hp=True):
         out += rect(xs[0], a, a + val, col)
         out += t(xs[0] + cw / 2, base - (a + val / 2) * S + 3.5, f"{lab} {num(val)}", "#2a251f", 8.5, 700)
         a += val
-    out += t(xs[0] + cw / 2, base - v["brut"] * S - 8, eur(v["brut"]), C["text"], 12)
+    out += t(xs[0] + cw / 2, base - v["brut"] * S - 8, eur(v["brut"]), C["text"], 15, 700)
     levels, cur, k = [v["brut"]], v["brut"], 1
     if hp:                                   # économie d'impôt du PER
         nxt = cur - v["eco"]
         out += rect(xs[k], nxt, cur, C["blue"])
-        out += t(xs[k] + cw / 2, base - cur * S - 8, f"− {eur(v['eco'])}", C["blue"], 12)
+        out += t(xs[k] + cw / 2, base - (cur - v["eco"] / 2) * S + 4, eur(v["eco"]), "#2a251f", 12, 700)
         cur = nxt; levels.append(cur); k += 1
     out += rect(xs[k], 0, v["reel"], C["tan"])
-    out += t(xs[k] + cw / 2, base - v["reel"] * S - 9, f"≈ {eur(v['reel'])}", C["tan"], 14, 700)
+    out += t(xs[k] + cw / 2, base - v["reel"] * S / 2 + 5, eur(v['reel']), "#2a251f", 15, 700)
     for i, lv in enumerate(levels):
         y = base - lv * S
         out += f'<line x1="{xs[i]+cw:.1f}" y1="{y:.1f}" x2="{xs[i+1]:.1f}" y2="{y:.1f}" stroke="{C["muted"]}" stroke-dasharray="3 3"/>'
