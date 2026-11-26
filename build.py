@@ -364,9 +364,46 @@ def evolution_chart(cols, hp=True):
     return f'<svg width="{W+16}" height="{base+46}" viewBox="-16 0 {W+16} {base+46}" style="margin-left:{(698-W)//2-16}px;overflow:visible">{out}</svg>'
 
 
+def waterfall(v, hp=True):
+    """Cascade du 1er mois sans SCPI (PER seul, éventuellement avec assurance-vie) : versement programmé, économie d’impôt du PER, effort réel."""
+    W, base = 620, 340
+    S = 280 / v["brut"]
+    cw = 112
+    ncol = 3 if hp else 2
+    gap = (W - ncol * cw) / (ncol - 1)
+    xs = [i * (cw + gap) for i in range(ncol)]
+    t = lambda x, y, s, col=C["text"], sz=11, w=600, a="middle", ff="Inter": f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{a}" fill="{col}" font-size="{sz}" font-weight="{w}" font-family="{ff}">{s}</text>'
+    out = f'<line x1="0" y1="{base}" x2="{W}" y2="{base}" stroke="{C["line"]}"/>'
+    def rect(x, a, b, col):
+        return f'<rect x="{x:.1f}" y="{base-b*S:.1f}" width="{cw}" height="{(b-a)*S:.1f}" rx="4" fill="{col}"/>'
+    # colonne 1 : versements programmés (AV, PER) empilés
+    a = 0
+    stack = [s for s in [("AV", v["av"], C["gold"]), ("PER", v["per"], C["blue"])] if s[1] > 0 and (hp or s[0] != "PER")]
+    for lab, val, col in stack:
+        out += rect(xs[0], a, a + val, col)
+        out += t(xs[0] + cw / 2, base - (a + val / 2) * S + 3.5, f"{lab} {num(val)}", "#2a251f", 8.5, 700)
+        a += val
+    out += t(xs[0] + cw / 2, base - v["brut"] * S - 8, eur(v["brut"]), C["text"], 12)
+    levels, cur, k = [v["brut"]], v["brut"], 1
+    if hp:                                   # économie d'impôt du PER
+        nxt = cur - v["eco"]
+        out += rect(xs[k], nxt, cur, C["blue"])
+        out += t(xs[k] + cw / 2, base - cur * S - 8, f"− {eur(v['eco'])}", C["blue"], 12)
+        cur = nxt; levels.append(cur); k += 1
+    out += rect(xs[k], 0, v["reel"], C["tan"])
+    out += t(xs[k] + cw / 2, base - v["reel"] * S - 9, f"≈ {eur(v['reel'])}", C["tan"], 14, 700)
+    for i, lv in enumerate(levels):
+        y = base - lv * S
+        out += f'<line x1="{xs[i]+cw:.1f}" y1="{y:.1f}" x2="{xs[i+1]:.1f}" y2="{y:.1f}" stroke="{C["muted"]}" stroke-dasharray="3 3"/>'
+    labs = [(["Versement programmé", "mensuel"], C["text"])] + ([(["Économie d’impôt", "PER"], C["blue"])] if hp else []) + [(["Effort réel", "mensuel"], C["text"])]
+    for x, (lines, col) in zip(xs, labs):
+        for k2, ln in enumerate(lines):
+            out += t(x + cw / 2, base + 24 + 16 * k2, ln, col, 11.5, 700)
+    return f'<svg width="{W+16}" height="{base+50-34}" viewBox="-16 34 {W+16} {base+50-34}" style="margin-left:{(698-W)//2-16}px;overflow:visible">{out}</svg>'
+
+
 def page4(d):
     v = vases(d)
-    evo = evolution(d)
     per_i, per_m, tmi = d["per"]["initial"], d["per"]["mensuel"], d["leviers"].get("tmi", 0)
     te = d["per"]["taux_eco"]
     rows = f"""
@@ -374,6 +411,7 @@ def page4(d):
 <tr><td style="white-space:nowrap">Versements programmés (12&nbsp;×&nbsp;{num(per_m)}&nbsp;€)</td><td>{eur(12*per_m)}</td><td>{eur(12*per_m*te)}</td></tr>
 <tr class="tot"><td>Total 1<sup>re</sup> année</td><td>{eur(per_i+12*per_m)}</td><td>{eur((per_i+12*per_m)*te)}</td></tr>"""
     hp = d.get("has_per", True)
+    hs = d["scpi"]["initial"] > 0 or d["scpi"]["mensuel"] > 0 or bool(d["fin"])    # au moins une SCPI (en direct ou financée)
     lead4 = "L’économie d’impôt du PER et les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps." if hp else "Les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps."
     txt_per = (f"Tes versements sur le PER sont déductibles de ton revenu imposable. Tu les déclares au printemps suivant : l’économie d’impôt, "
                f"ici à {int(tmi*100)}&nbsp;%, arrive sur ton compte courant pendant l’été. La première année, tu avances donc les versements avant ce remboursement. "
@@ -395,11 +433,22 @@ def page4(d):
     <div class="lbl" style="color:{C['sage']};font-size:8.5px;margin-top:8px">SCPI</div><p style="margin-top:5px">{txt_scpi}</p></div>"""
     note4 = (f'<p style="margin:12px 0 0 {(698-620)//2}px;max-width:660px;font-size:9px;line-height:1.5;color:var(--muted)">Projection : loyers de la SCPI en direct à {pctfr(d["hyp"]["scpi_brut"])}&nbsp;% par an, '
              f'imposés à {int(d["hyp"]["fiscalite_comptant"]*100)}&nbsp;%, parts revalorisées de {pctfr(d["hyp"]["scpi_reval"])}&nbsp;% par an' + (' ; économie d’impôt du PER à tranche constante' if hp else '') + '.</p>')
+    if hs:      # au moins une SCPI : l'effort réel est montré dans le temps
+        graphe4 = evolution_chart(evolution(d), hp)
+    else:       # PER seul : les loyers n'existent pas, l'économie d'impôt est constante : cascade du 1er mois
+        lead4 = "L’économie d’impôt du PER finance une partie de tes versements."
+        note4 = ""
+        graphe4 = waterfall(v, hp)
+        bas4 = f"""<div style="display:grid;grid-template-columns:1.45fr 1fr;gap:16px;margin-top:20px">
+  <div class="card" style="padding:13px 15px 8px"><div class="lbl" style="color:{C['blue']}">Le PER, première année (tranche à {int(tmi*100)} %)</div>
+    <table style="margin-top:4px"><tr><th>Versement</th><th>Montant</th><th>Économie</th></tr>{rows}</table></div>
+  <div class="card" style="{sty_bloc}"><div class="lbl" style="color:var(--gold)">Comment ça marche</div><p style="margin-top:6px">{txt_per}</p></div>
+</div>"""
     inner = f"""
 <h2 style="font-size:41px;line-height:1.04;text-wrap:balance">Ton effort réel est inférieur à ce que tu investis.</h2>
 <p class="lead">{lead4}</p>
 <div class="rule"></div>
-<div style="margin-top:22px">{evolution_chart(evo, hp)}</div>
+<div style="margin-top:22px">{graphe4}</div>
 {note4}
 {bas4}
 """
