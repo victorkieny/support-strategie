@@ -175,8 +175,8 @@ def page2(d):
     lab = s["precaution"]["label"]
     hp = d.get("has_per", True)
     hf = bool(d.get("financement"))
-    n_env0 = 2 + (1 if hp else 0) + (1 if hf else 0)
-    env_txt = {2: "Deux enveloppes, deux rôles", 3: "Trois enveloppes, trois rôles", 4: "Quatre enveloppes, quatre rôles"}[n_env0]
+    n_env0 = 1 + int(d["has_sd"]) + (1 if hp else 0) + (1 if hf else 0)
+    env_txt = {1: "Une enveloppe, un rôle", 2: "Deux enveloppes, deux rôles", 3: "Trois enveloppes, trois rôles", 4: "Quatre enveloppes, quatre rôles"}[n_env0]
     tot = prec + inv
     W = 698
     cl, cr = 175, 523          # centres des deux blocs (épargne de précaution / épargne à investir)
@@ -185,20 +185,20 @@ def page2(d):
 <div class="nb" style="left:{cl-135}px;top:150px;width:270px;height:96px;background:var(--card);border:1.5px solid {C['prec']}"><div class="a" style="color:{C['prec']}">{eur(prec)}</div><div class="b" style="color:{C['prec']}">Épargne de précaution</div><div class="c">{lab}, pour les imprévus, vacances et envies à court terme</div></div>
 <div class="nb" style="left:{cr-135}px;top:150px;width:270px;height:96px;background:rgba(180,152,104,.16);border:1.5px solid {C['gold']}"><div class="a" style="color:{C['gold']}">{eur(inv)}</div><div class="b" style="color:{C['gold']}">Épargne à investir</div><div class="c">{env_txt}</div></div>
 """
-    items = [
-        (C["gold"], "Capitalisante", "Assurance-vie", eur(d["av"]["initial"]), "reste disponible"),
-        (C["sage"], "Distribuante", "SCPI en direct", eur(d["scpi"]["initial"]), "verse des loyers"),
-    ]
+    hsd = d["has_sd"]
+    items = [(C["gold"], "Capitalisante", "Assurance-vie", eur(d["av"]["initial"]), "reste disponible")]
+    if hsd:
+        items.append((C["sage"], "Distribuante", "SCPI en direct", eur(d["scpi"]["initial"]), "verse des loyers"))
     if hp:
         items.append((C["blue"], "Économie d’impôt", "PER", eur(d["per"]["initial"]), "réduit ton impôt"))
     if hf:
         items.append((C["lev"], "Démultiplicatrice", "SCPI en financement", f"{eur(d['fin']['apport'])} d’apport", f"{eur(d['fin']['emprunte'])} financés"))
     n_env = len(items)
     bw = 160 if n_env == 4 else (190 if n_env == 3 else 220)
-    gap = (W - n_env * bw) / (n_env - 1)
-    xs = [i * (bw + gap) for i in range(n_env)]
+    gap = (W - n_env * bw) / (n_env - 1) if n_env > 1 else 0
+    xs = [i * (bw + gap) for i in range(n_env)] if n_env > 1 else [(W - bw) / 2]
     # titre : accord selon le nombre de fondations (2 premières enveloppes) et de leviers (les suivantes) actifs
-    nf, nl = 2, n_env - 2
+    nf, nl = 1 + int(hsd), n_env - 1 - int(hsd)
     parts_t = ["une épargne de précaution"]
     if nf: parts_t.append("des fondations" if nf > 1 else "une fondation")
     if nl: parts_t.append("des leviers" if nl > 1 else "un levier")
@@ -218,14 +218,14 @@ def page2(d):
         y = 520
         return f'<path d="M{x1} {y-8} V{y} H{x2} V{y-8}" fill="none" stroke="{col}" stroke-width="1.3"/><text x="{(x1+x2)/2}" y="{y+17}" text-anchor="middle" fill="{col}" font-size="9.5" letter-spacing="2.2" font-weight="600" font-family="Inter">{label}</text>'
     poss, poss1 = ("VOS", "VOTRE") if d["client"].get("registre") in ("vous", "couple") else ("TES", "TON")
-    ar += brace(xs[0], xs[1] + bw, f"{poss} FONDATIONS PATRIMONIALES", C["tan"])
+    ar += brace(xs[0], xs[nf - 1] + bw, f"{poss} FONDATIONS PATRIMONIALES" if nf > 1 else f"{'VOTRE' if poss == 'VOS' else 'TA'} FONDATION PATRIMONIALE", C["tan"])
     if nl > 0:
-        ar += brace(xs[2], xs[-1] + bw, f"{poss} LEVIERS" if nl > 1 else f"{poss1} LEVIER", C["tan"])
+        ar += brace(xs[nf], xs[-1] + bw, f"{poss} LEVIERS" if nl > 1 else f"{poss1} LEVIER", C["tan"])
     ar += "</svg>"
     if nl > 0:
-        lead2 = "Ton épargne de précaution couvre le court terme, tes fondations construisent un patrimoine qui rayonne sur le long terme, " + ("et les leviers l’amplifient." if nl > 1 else "et le levier l’amplifie.")
+        lead2 = "Ton épargne de précaution couvre le court terme, " + ("tes fondations construisent" if nf > 1 else "ta fondation construit") + " un patrimoine qui rayonne sur le long terme, " + ("et les leviers l’amplifient." if nl > 1 else "et le levier l’amplifie.")
     else:
-        lead2 = "Ton épargne de précaution couvre le court terme, et tes fondations construisent un patrimoine qui rayonne sur le long terme."
+        lead2 = "Ton épargne de précaution couvre le court terme, et " + ("tes fondations construisent" if nf > 1 else "ta fondation construit") + " un patrimoine qui rayonne sur le long terme."
     inner = f"""
 <h2 style="font-size:41px;line-height:1.04;text-wrap:balance">{titre}</h2>
 <p class="lead">{lead2}</p>
@@ -242,6 +242,8 @@ def page2(d):
 # ------------------------------------------------------------------ page 3
 def donut(parts, cx, cy, R, r, total):
     import math
+    if len(parts) == 1:        # un seul poste : l'arc d'un tour complet n'existe pas, on trace l'anneau
+        return f'<circle cx="{cx}" cy="{cy}" r="{(R + r) / 2}" fill="none" stroke="{parts[0][1]}" stroke-width="{R - r}"/>'
     out, ang = "", -math.pi / 2
     for val, col in parts:
         da = 2 * math.pi * val / total
@@ -275,6 +277,8 @@ def page3(d):
                       f"Financement sur {f['duree']} ans."))
     if not d.get("has_per", True):
         cards = [x for x in cards if x[2] != "PER"]
+    if not d["has_sd"]:
+        cards = [x for x in cards if x[2] != "SCPI en direct"]
     html = ""
     for i_c, (col, tag, name, key, role, lim) in enumerate(cards):
         span = ";grid-column:1/-1" if (len(cards) % 2 == 1 and i_c == len(cards) - 1) else ""
@@ -299,6 +303,8 @@ def page3(d):
         rows.append(("SCPI en financement", C["lev"], f["apport"], f["effort"]))
     if not d.get("has_per", True):
         rows = [r for r in rows if r[0] != "PER"]
+    if not d["has_sd"]:
+        rows = [r for r in rows if r[0] != "SCPI en direct"]
     ti, tm = sum(r[2] for r in rows), sum(r[3] for r in rows)
     trs = "".join(f'<tr><td><span class="dc" style="background:{c}"></span>{n}</td><td>{eur(i)}</td><td>{eur(m)}</td></tr>' for n, c, i, m in rows)
     trs += f'<tr class="tot"><td>Total</td><td>{eur(ti)}</td><td>{eur(tm)}</td></tr>'
@@ -551,6 +557,8 @@ def chart5(sim, d):
         items = [x for x in items if x[0] != "PER"]
     if not d.get("financement"):
         items = [x for x in items if x[0] != "SCPI en financement"]
+    if not d["has_sd"]:
+        items = [x for x in items if x[0] != "SCPI en direct"]
     for i, (n, col) in enumerate(items):
         yy = 34 + i * 30
         out += f'<rect x="{lx}" y="{yy}" width="11" height="11" rx="2" fill="{col}"/>' + t(lx + 19, yy + 9.5, n, C["text"], 11, 600, "start")
@@ -727,12 +735,12 @@ def page7(d):
     hp = d.get("has_per", True)
     # frise toujours centrée sur la page : la validation et la dernière souscription sont à égale distance des bords,
     # les étapes intermédiaires sont réparties à intervalles réguliers (3 ou 4 étapes selon le PER)
-    n_et = 1 + 1 + int(hp) + 1
+    n_et = max(1 + int(d["has_sd"]) + int(hp) + 1, 3 if hf else 2)
     marge = 78
     px = [marge + k * (W - 2 * marge) / (n_et - 1) for k in range(n_et)]
     x1, xa = px[0], px[1:]
     nodes.append((x1, ys, 1, C["text"], "Validation", "de la stratégie<br>et des montants"))
-    top = [(C["sage"], "SCPI en direct", f"{eur(d['scpi']['initial'])}<br>+ {num(d['scpi']['mensuel'])}\u00a0€/mois")]
+    top = [(C["sage"], "SCPI en direct", f"{eur(d['scpi']['initial'])}<br>+ {num(d['scpi']['mensuel'])}\u00a0€/mois")] if d["has_sd"] else []
     if hp:
         top.append((C["blue"], "PER", f"{eur(d['per']['initial'])}<br>+ {num(d['per']['mensuel'])}\u00a0€/mois<br><b style='color:{C['blue']}'>avant le 31/12</b>"))
     top.append((C["gold"], "Assurance-vie", f"{eur(d['av']['initial'])}<br>+ {num(d['av']['mensuel'])}\u00a0€/mois"))
@@ -767,10 +775,14 @@ def page7(d):
     fin_h = f" SCPI en financement&nbsp;: {pct(f['loyers_taux_simu'])}&nbsp;%/an, non imposés (grâce aux charges déductibles)." if hf else ""
     fin_t = f" Financement&nbsp;: {fin_txt}." if hf else ""
     per_txt = f" Économie d’impôt du PER calculée avec une tranche marginale (TMI) de {int(d['leviers']['tmi']*100)}&nbsp;%." if hp else ""
+    hsd = d["has_sd"]
+    scpi_h = f" SCPI en direct&nbsp;: {pct(h['scpi_brut'])}&nbsp;%/an de loyers, imposés à {int(h['fiscalite_comptant']*100)}&nbsp;% (fiscalité européenne)." if hsd else ""
+    reval_h = f" Parts revalorisées de {pct(h['scpi_reval'])}&nbsp;%/an." if (hsd or hf) else ""
+    scpi_r = " Les SCPI sont un placement immobilier de long terme&nbsp;: capital, revenus et liquidité non garantis." if (hsd or hf) else ""
     sav_items = [
         (None, "Ce document est une simulation pédagogique. Les rendements indiqués sont des hypothèses&nbsp;: ils ne sont pas garantis et les performances passées ne préjugent pas des performances futures."),
-        ("Hypothèses", f"Assurance-vie{' et PER' if hp else ''}&nbsp;: {pct(h['taux_av_per'])}&nbsp;%/an. SCPI en direct&nbsp;: {pct(h['scpi_brut'])}&nbsp;%/an de loyers, imposés à {int(h['fiscalite_comptant']*100)}&nbsp;% (fiscalité européenne).{fin_h} Parts revalorisées de {pct(h['scpi_reval'])}&nbsp;%/an.{fin_t}{per_txt}"),
-        ("Risques", f"Les unités de compte de l’assurance-vie{' et du PER' if hp else ''} présentent un risque de perte en capital. Les SCPI sont un placement immobilier de long terme&nbsp;: capital, revenus et liquidité non garantis."),
+        ("Hypothèses", f"Assurance-vie{' et PER' if hp else ''}&nbsp;: {pct(h['taux_av_per'])}&nbsp;%/an.{scpi_h}{fin_h}{reval_h}{fin_t}{per_txt}"),
+        ("Risques", f"Les unités de compte de l’assurance-vie{' et du PER' if hp else ''} présentent un risque de perte en capital.{scpi_r}"),
         ("Financement et souscription", "Toute opération de crédit est soumise à l’acceptation du prêteur ; aucun engagement de financement n’est pris dans ce document. Aucune souscription n’est réalisée sans ta validation préalable et la remise des documents réglementaires (document d’entrée en relation, recueil d’informations, profil investisseur)."),
     ]
     if not hf:

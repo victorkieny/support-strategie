@@ -41,7 +41,8 @@ def prepare(c, version=None):
     }
     d["hyp"]["scpi_distribution"] = h["scpi_brut"] * (1 - h["fiscalite_comptant"])   # part perçue après impôt
     # page 4 (effort réel) : n'existe que s'il y a un PER (économie d'impôt) ou une SCPI (loyers, en direct ou financée)
-    d["page_effort"] = d["has_per"] or (c["scpi"]["initial"] + c["scpi"]["mensuel"]) > 0 or fi["retenu"]
+    d["has_sd"] = (c["scpi"]["initial"] + c["scpi"]["mensuel"]) > 0         # SCPI en direct (sinon : aucune mention de la SCPI en direct)
+    d["page_effort"] = d["has_per"] or d["has_sd"] or fi["retenu"]
     f = d["fin"]
     if f is None:                                             # variante sans financement : aucun calcul de financement
         return d
