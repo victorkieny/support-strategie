@@ -323,7 +323,7 @@ def page3(d):
 # ------------------------------------------------------------------ page 4
 def evolution_chart(cols, hp=True):
     """Colonnes de même hauteur (versement programmé mensuel) : effort réel en bas, loyers perçus, puis économie d'impôt."""
-    W, base, top = 620, 372, 70
+    W, base, top = 620, (312 if hp else 372), 70
     n = len(cols)
     cw = 112
     gap = (W - n * cw) / (n - 1)
@@ -333,7 +333,7 @@ def evolution_chart(cols, hp=True):
     t = lambda x, y, s, col=C["text"], sz=11, w=600, a="middle": f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{a}" fill="{col}" font-size="{sz}" font-weight="{w}" font-family="Inter">{s}</text>'
     out = f'<line x1="0" y1="{base}" x2="{W}" y2="{base}" stroke="{C["line"]}"/>'
     # légende
-    leg = [(C["tan"], "Effort réel")] + [(C["sage"], "Loyers perçus (SCPI en direct)")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else [])
+    leg = [(C["tan"], "Effort réel")] + [(C["sage"], "Loyers perçus (SCPI)")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else [])
     x = 0
     for col, lab in leg:
         out += f'<rect x="{x}" y="4" width="10" height="10" rx="2" fill="{col}"/>' + t(x + 16, 13, lab, C["text"], 10.5, 600, "start")
@@ -374,25 +374,29 @@ def page4(d):
 <tr><td style="white-space:nowrap">Versements programmés (12&nbsp;×&nbsp;{num(per_m)}&nbsp;€)</td><td>{eur(12*per_m)}</td><td>{eur(12*per_m*te)}</td></tr>
 <tr class="tot"><td>Total 1<sup>re</sup> année</td><td>{eur(per_i+12*per_m)}</td><td>{eur((per_i+12*per_m)*te)}</td></tr>"""
     hp = d.get("has_per", True)
-    lead4 = "L’économie d’impôt du PER et les loyers perçus de la SCPI en direct financent une partie de tes versements, de plus en plus avec le temps." if hp else "Les loyers perçus de la SCPI en direct financent une partie de tes versements, de plus en plus avec le temps."
+    lead4 = "L’économie d’impôt du PER et les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps." if hp else "Les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps."
+    txt_per = (f"Tes versements sur le PER sont déductibles de ton revenu imposable. Tu les déclares au printemps suivant : l’économie d’impôt, "
+               f"ici à {int(tmi*100)}&nbsp;%, arrive sur ton compte courant pendant l’été. La première année, tu avances donc les versements avant ce remboursement. "
+               f"Le graphique raisonne en effort lissé, à tranche d’imposition constante.")
+    txt_scpi = ("Les loyers de tes SCPI viennent d’abord de ton versement initial, puis de chaque versement mensuel. Ils augmentent aussi avec la revalorisation "
+                "des parts déjà acquises. Chaque versement ne produit ses premiers loyers qu’après un délai de jouissance d’environ 6&nbsp;mois : la projection ne le déduit pas, "
+                "ton effort des premiers mois sera donc un peu plus élevé que sur le graphique.")
+    sty_bloc = "background:rgba(180,152,104,.12);border-color:rgba(180,152,104,.45)"
     if hp:
-        bas4 = f"""<div style="display:grid;grid-template-columns:1.45fr 1fr;gap:16px;margin-top:20px">
-  <div class="card" style="padding:13px 15px 8px"><div class="lbl" style="color:{C['blue']}">Le PER, première année (tranche à {int(tmi*100)} %)</div>
+        bas4 = f"""<div class="card" style="margin-top:20px;padding:13px 15px 8px"><div class="lbl" style="color:{C['blue']}">Le PER, première année (tranche à {int(tmi*100)} %)</div>
     <table style="margin-top:4px"><tr><th>Versement</th><th>Montant</th><th>Économie</th></tr>{rows}</table></div>
-  <div class="card" style="background:rgba(180,152,104,.12);border-color:rgba(180,152,104,.45)"><div class="lbl" style="color:var(--gold)">Comment ça marche</div>
-    <p style="margin-top:6px">Lors de ta déclaration d’impôt au printemps suivant, je t’accompagne pour déclarer tes versements PER. L’économie d’impôt arrive ensuite sur ton compte courant, pendant l’été.</p>
-    <p style="margin-top:6px">La première année, tu avances donc les versements avant le premier remboursement. Ici, on raisonne en effort lissé sur la durée.</p></div>
-</div>"""
+<div class="card" style="margin-top:14px;{sty_bloc}"><div class="lbl" style="color:var(--gold)">Comment ça marche</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:8px">
+    <div><div class="lbl" style="color:{C['blue']};font-size:8.5px">PER</div><p style="margin-top:5px">{txt_per}</p></div>
+    <div><div class="lbl" style="color:{C['sage']};font-size:8.5px">SCPI</div><p style="margin-top:5px">{txt_scpi}</p></div>
+  </div></div>"""
     else:
-        fisc_pct = int(d["hyp"]["fiscalite_comptant"] * 100)
-        bas4 = f"""<div class="card" style="margin-top:20px;background:rgba(180,152,104,.12);border-color:rgba(180,152,104,.45)"><div class="lbl" style="color:var(--gold)">Comment ça marche</div>
-    <p style="margin-top:6px">Au départ, les loyers viennent de ton versement initial en SCPI en direct ({eur(d["scpi"]["initial"])}) : environ {eur(v["loy_dir"])} par mois, après impôt à {fisc_pct}&nbsp;%.</p>
-    <p style="margin-top:6px">Tes versements mensuels en SCPI produisent à leur tour des loyers : c’est ce qui fait baisser ton effort au fil des années.</p></div>"""
-    note4 = (f'<p style="margin:12px 0 0 {(698-620)//2}px;max-width:620px;font-size:9px;line-height:1.5;color:var(--muted)">Projection : loyers de la SCPI en direct à {pctfr(d["hyp"]["scpi_brut"])}&nbsp;% par an, '
-             f'imposés à {int(d["hyp"]["fiscalite_comptant"]*100)}&nbsp;%, non garantis' + (' ; économie d’impôt à tranche constante' if hp else '')
-             + (' ; participation au financement gardée constante ici, elle baisse en réalité (page 6)' if d.get('financement') else '') + '.</p>')
+        bas4 = f"""<div class="card" style="margin-top:20px;{sty_bloc}"><div class="lbl" style="color:var(--gold)">Comment ça marche</div>
+    <div class="lbl" style="color:{C['sage']};font-size:8.5px;margin-top:8px">SCPI</div><p style="margin-top:5px">{txt_scpi}</p></div>"""
+    note4 = (f'<p style="margin:12px 0 0 {(698-620)//2}px;max-width:660px;font-size:9px;line-height:1.5;color:var(--muted)">Projection : loyers de la SCPI en direct à {pctfr(d["hyp"]["scpi_brut"])}&nbsp;% par an, '
+             f'imposés à {int(d["hyp"]["fiscalite_comptant"]*100)}&nbsp;%, parts revalorisées de {pctfr(d["hyp"]["scpi_reval"])}&nbsp;% par an' + (' ; économie d’impôt du PER à tranche constante' if hp else '') + '.</p>')
     inner = f"""
-<h2 style="font-size:41px;line-height:1.04;text-wrap:balance">Ton effort réel est inférieur à ce que tu verses, et il baisse.</h2>
+<h2 style="font-size:41px;line-height:1.04;text-wrap:balance">Ton effort réel est inférieur à ce que tu verses, et l’écart peut se creuser.</h2>
 <p class="lead">{lead4}</p>
 <div class="rule"></div>
 <div style="margin-top:22px">{evolution_chart(evo, hp)}</div>

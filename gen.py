@@ -87,6 +87,8 @@ def controles_pdf(pdf, d, retenu):
     if not retenu:
         for m in re.finditer(r"financement|Démultiplicatrice|emprunt", txt, flags=re.I):
             E.append("mention du financement alors qu'il n'est pas retenu (objectif du client à reformuler ?) : …" + txt[max(0, m.start()-30):m.end()+30].strip().replace("\n", " ") + "…")
+    if retenu and d["fin"]["duree"] < 15:
+        W.append(f"financement de {d['fin']['duree']} ans : page 4, la participation au financement disparaît avant l'horizon de 15 ans, à relire")
     if retenu and d["fin"]["annee_limite"] < d["fin"]["duree"]:
         W.append(f"autofinancement atteint en année {d['fin']['annee_limite']} (avant le terme {d['fin']['duree']}) : page 6 à relire")
     return E, W

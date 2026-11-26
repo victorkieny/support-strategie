@@ -103,6 +103,7 @@ def simulate(d, horizons=(10, 20, 30)):
             "poche": versé - impot - loy_dir - loy_fin,
             "loyers_mois": s["revenuMensuel"] + f["loyer_mois"],
             "loy_dir_mois": s["revenuMensuel"],          # loyers mensuels nets de la seule SCPI en direct (page 4)
+            "loy_fin_mois": f["loyer_mois"],             # loyer mensuel de la SCPI en financement (page 4)
         }
         series[y] = rec
         if y in horizons:
@@ -124,17 +125,30 @@ def vases(d):
                 loy_dir=loy_dir, brut=brut, reel=reel, prog=prog_av + prog_sc + prog_per)
 
 
+HORIZONS_EFFORT = (5, 10, 15)    # page 4 : 1er mois, puis dans 5, 10 et 15 ans (indépendant des horizons de la page 5)
+
+
 def evolution(d):
-    """Page 4 : ce que financent l'économie d'impôt du PER et les loyers de la SCPI en direct, chaque mois, au 1er mois
-    puis à chaque horizon. Le versement programmé (brut) reste celui du 1er mois : la participation au financement et
-    l'économie d'impôt sont gardées constantes (hypothèse prudente, cf. page 6 pour la baisse de l'effort sur le financement)."""
+    """Page 4 : ce que financent chaque mois l'économie d'impôt du PER et les loyers des SCPI, au 1er mois puis à chaque horizon.
+    Le versement programmé (brut) est celui du 1er mois (participation au financement comprise, nette des loyers de la SCPI
+    financée). Les loyers qui s'y ajoutent ensuite viennent des simulateurs : SCPI en direct (versements mensuels et
+    revalorisation des parts déjà acquises) et progression du loyer de la SCPI financée (revalorisation), qui réduit la
+    participation au financement. L'économie d'impôt du PER est gardée constante (tranche constante)."""
     v = vases(d)
-    s = simulate(d, d["horizons"])
-    pts = [("Dès le 1er mois", v["loy_dir"])] + [(f"Dans {h} ans", s[h]["loy_dir_mois"]) for h in d["horizons"]]
+    sim = simulate(d, HORIZONS_EFFORT)
+    l1_fin = sim["series"][1]["loy_fin_mois"]
     plafond = v["brut"] - v["eco"]
+    pts = [("Au 1er mois", v["loy_dir"])]
+    for h in HORIZONS_EFFORT:
+        r = sim[h]
+        gain_fin = 0.0
+        if d["fin"]:
+            # financement terminé avant l'horizon : la participation disparaît ; sinon elle baisse avec le loyer de la SCPI financée
+            gain_fin = v["part"] if h > d["fin"]["duree"] else r["loy_fin_mois"] - l1_fin
+        pts.append((f"Dans {h} ans", r["loy_dir_mois"] + gain_fin))
     cols = []
     for lab, loy in pts:
-        loy = min(loy, plafond)
+        loy = min(max(loy, 0.0), plafond)
         cols.append(dict(label=lab, loy=loy, eco=v["eco"], reel=plafond - loy, brut=v["brut"]))
     return cols
 
