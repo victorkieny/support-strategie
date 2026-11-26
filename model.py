@@ -42,6 +42,8 @@ def prepare(c, version=None):
     d["hyp"]["scpi_distribution"] = h["scpi_brut"] * (1 - h["fiscalite_comptant"])   # part perçue après impôt
     # page 4 (effort réel) : n'existe que s'il y a un PER (économie d'impôt) ou une SCPI (loyers, en direct ou financée)
     d["has_sd"] = (c["scpi"]["initial"] + c["scpi"]["mensuel"]) > 0         # SCPI en direct (sinon : aucune mention de la SCPI en direct)
+    # loyers de la SCPI en direct réinvestis (choix du client, demandé avant chaque dossier) : jamais de valeur par défaut, cf. gen.py
+    d["reinv"] = bool(c["scpi"].get("reinvestir_loyers")) and d["has_sd"]
     d["page_effort"] = d["has_per"] or d["has_sd"] or fi["retenu"]
     f = d["fin"]
     if f is None:                                             # variante sans financement : aucun calcul de financement
@@ -96,7 +98,9 @@ def simulate(d, horizons=(10, 20, 30)):
         a, p, s = proj["av"][y - 1], proj["per"][y - 1], proj["scpi"][y - 1]
         f = rf[y - 1] if fin else {"loyer": 0.0, "valeur": 0.0, "crd": 0.0, "loyer_mois": 0.0}   # sans financement : rien
         loy_fin += f["loyer"]
-        loy_dir = s["revenusCumules"]   # déjà nets de fiscalité dans projection.html (fiscaliteEuropeenne, taux effectif)
+        # déjà nets de fiscalité dans projection.html (fiscaliteEuropeenne, taux effectif). Loyers réinvestis (reinvestir) : ils sont
+        # dans le capital de la SCPI (le simulateur les y ajoute) et ne sont pas perçus : rien à déduire de la poche du client.
+        loy_dir = 0.0 if d["reinv"] else s["revenusCumules"]
         versé = invest0 + 12 * y * prog + (12 * fin["mensualite_exacte"] * min(y, fin["duree"]) if fin else 0)
         impot = (d["per"]["initial"] + 12 * y * d["per"]["mensuel"]) * d["per"]["taux_eco"]
         total = a["capital"] + p["capital"] + s["capital"] + f["valeur"] - f["crd"]
@@ -104,8 +108,9 @@ def simulate(d, horizons=(10, 20, 30)):
             "av": a["capital"], "per": p["capital"], "scpi": s["capital"], "fin": f["valeur"] - f["crd"], "total": total,
             "versé": versé, "impot": impot, "loyers": loy_dir + loy_fin,
             "poche": versé - impot - loy_dir - loy_fin,
-            "loyers_mois": s["revenuMensuel"] + f["loyer_mois"],
-            "loy_dir_mois": s["revenuMensuel"],          # loyers mensuels nets de la seule SCPI en direct (page 4)
+            "loyers_mois": (0.0 if d["reinv"] else s["revenuMensuel"]) + f["loyer_mois"],      # loyers perçus (hors réinvestis)
+            "loy_dir_mois": 0.0 if d["reinv"] else s["revenuMensuel"],   # loyers mensuels perçus nets de la seule SCPI en direct (page 4)
+            "reinv_mois": s["revenuMensuel"] if d["reinv"] else 0.0,     # loyers mensuels réinvestis (équivalent mensuel d'un réinvestissement annuel)
             "loy_fin_mois": f["loyer_mois"],             # loyer mensuel de la SCPI en financement (page 4)
         }
         series[y] = rec
@@ -121,7 +126,7 @@ def vases(d):
     prog_av, prog_sc, prog_per = d["av"]["mensuel"], d["scpi"]["mensuel"], d["per"]["mensuel"]
     part = d["fin"]["effort"] if d["fin"] else 0    # participation mensuelle au financement (0 sans financement)
     eco = prog_per * d["per"]["taux_eco"]
-    loy_dir = d["scpi"]["initial"] * d["hyp"]["scpi_distribution"] / 12
+    loy_dir = 0.0 if d["reinv"] else d["scpi"]["initial"] * d["hyp"]["scpi_distribution"] / 12     # loyers perçus au 1er mois (réinvestis : aucun)
     brut = prog_av + prog_sc + prog_per + part
     reel = brut - eco - loy_dir
     return dict(av=prog_av, sc=prog_sc, per=prog_per, part=part, eco=eco,
@@ -162,3 +167,29 @@ if __name__ == "__main__":
     for y, v in [(k, x) for k, x in s.items() if k != "series"]:
         print(y, {k: round(x) for k, x in v.items()})
     print({k: round(v, 1) for k, v in vases(DATA).items()})
+
+
+def evolution_reinv(d):
+    """Page 4, loyers de la SCPI en direct réinvestis : la quantité investie par mois augmente, l'effort réel stagne.
+    Colonnes : effort réel (tranche, bas), économie d'impôt du PER, loyers de la SCPI financée qui remboursent le financement,
+    loyers réinvestis de la SCPI en direct (haut, croissants). Au 1er mois aucun loyer n'est encore réinvesti (délai de jouissance).
+    Les loyers réinvestis viennent du simulateur (projection.html, reinvestir) : réinvestis une fois par an dans le simulateur,
+    affichés ici en équivalent mensuel."""
+    v = vases(d)
+    sim = simulate(d, HORIZONS_EFFORT)
+    l1_fin = sim["series"][1]["loy_fin_mois"]
+    base_effort = v["brut"] - v["eco"]
+    cols = [dict(label="Au 1er mois", effort=base_effort, eco=v["eco"], fin=0.0, reinv=0.0)]
+    for h in HORIZONS_EFFORT:
+        r = sim[h]
+        fin_loy, part_h = 0.0, v["part"]
+        if d["fin"]:
+            if h > d["fin"]["duree"]:            # financement terminé : plus de participation, donc plus de loyers à y affecter
+                part_h = 0.0
+            else:                                 # la participation baisse avec le loyer de la SCPI financée
+                fin_loy = max(r["loy_fin_mois"] - l1_fin, 0.0)
+        effort = max(v["brut"] - v["part"] + part_h - v["eco"] - fin_loy, 0.0)
+        cols.append(dict(label=f"Dans {h} ans", effort=effort, eco=v["eco"], fin=fin_loy, reinv=r["reinv_mois"]))
+    for c in cols:
+        c["total"] = c["effort"] + c["eco"] + c["fin"] + c["reinv"]
+    return cols

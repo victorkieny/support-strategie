@@ -10,6 +10,8 @@ CAS = {  # fichier : graphique dans le temps ? (None = pas de page 4)
     "client_av_seule_exemple.json": None,
     "client_per_seul_exemple.json": False,
     "client_exemple.json": True,
+    "client_reinvest_exemple.json": True,
+    "client_reinvest_sans_financement_sans_per_exemple.json": True,
     "client_sans_financement_exemple.json": True,
     "client_sans_financement_sans_per_exemple.json": True,
 }
@@ -31,7 +33,7 @@ for nom, temps in CAS.items():
             continue
         p4 = subprocess.run(["pdftotext", "-f", "4", "-l", "4", "-layout", pdf, "-"], capture_output=True, text=True).stdout
         flat = " ".join(p4.split())
-        a = {"de plus en plus": "de plus en plus avec le temps" in flat, "dans 15 ans": "Dans 15 ans" in flat, "loyers": "Loyers perçus" in flat}
+        a = {"de plus en plus": "de plus en plus avec le temps" in flat, "dans 15 ans": "Dans 15 ans" in flat, "loyers": ("Loyers perçus" in flat or "Loyers réinvestis" in flat)}
         att = {"de plus en plus": temps, "dans 15 ans": temps, "loyers": temps}
         if a != att:
             ko[nom] = dict(obtenu=a, attendu=att)

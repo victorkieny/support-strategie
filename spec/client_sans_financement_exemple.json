@@ -58,7 +58,8 @@
   },
   "scpi": {
     "initial": 12000,
-    "mensuel": 100
+    "mensuel": 100,
+    "reinvestir_loyers": false
   },
   "per": {
     "initial": 3000,

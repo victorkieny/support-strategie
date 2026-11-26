@@ -24,6 +24,8 @@ def valider(c):
     ini = c["av"]["initial"] + c["scpi"]["initial"] + c["per"]["initial"] + (fi.get("apport", 750) if fi["retenu"] else 0)
     if ini != c["situation"]["investir"]:
         E.append(f"AV + SCPI + PER (initiaux)" + (" + apport" if fi["retenu"] else "") + f" = {ini} € ≠ épargne à investir {c['situation']['investir']} €")
+    if (c["scpi"]["initial"] + c["scpi"]["mensuel"]) > 0 and not isinstance(c["scpi"].get("reinvestir_loyers"), bool):
+        E.append("scpi.reinvestir_loyers (true/false) requis dès qu'il y a une SCPI en direct : le client réinvestit-il ses loyers ? À demander (QCM), jamais à déduire")
     comp = c["situation"].get("composition")
     if not comp:
         E.append("situation.composition requise : patrimoine actuel du client, un poste par ligne (libelle, montant), tel que relevé au R1 ; à demander, jamais à déduire")

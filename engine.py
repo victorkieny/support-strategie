@@ -45,7 +45,7 @@ def run_projection(d, horizon):
                 "rendement": round(h["taux_av_per"] * 100, 6), "dureeTotale": horizon},
         "scpi": {"rendement": round(h["scpi_brut"] * 100, 6), "versementInitial": d["scpi"]["initial"],
                  "versementMensuel": d["scpi"]["mensuel"], "dureeVersements": horizon, "dureeTotale": horizon,
-                 "revalorisationPartsPct": round(h["scpi_reval"] * 100, 6), "reinvestir": False, "tmi": 30,
+                 "revalorisationPartsPct": round(h["scpi_reval"] * 100, 6), "reinvestir": bool(d.get("reinv")), "tmi": 30,
                  "fiscaliteEuropeenne": True, "tauxEffectifReinvestissement": round(h["fiscalite_comptant"] * 100, 6)},
     }
     p = subprocess.run(["node", os.path.join(HERE, "engine_proj.js"), HTML_PROJ],

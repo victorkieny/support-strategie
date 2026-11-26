@@ -1,6 +1,6 @@
 """Maquette — document « Stratégie patrimoniale » (HTML -> PDF). Données fictives, charte des slides de Victor."""
 import sys
-from model import DATA, eur, num, simulate, vases, evolution
+from model import DATA, eur, num, simulate, vases, evolution, evolution_reinv
 
 C = dict(bg="#2a251f", card="#332d26", card2="#3b352d", line="#4a4339", text="#f1eee7", muted="#8e8a83",
          gold="#b49868", tan="#c3af8d", blue="#758aa4", prec="#9aa3ad", sage="#86a08a", lev="#5b9a6b")
@@ -188,7 +188,7 @@ def page2(d):
     hsd = d["has_sd"]
     items = [(C["gold"], "Capitalisante", "Assurance-vie", eur(d["av"]["initial"]), "reste disponible")]
     if hsd:
-        items.append((C["sage"], "Distribuante", "SCPI en direct", eur(d["scpi"]["initial"]), "verse des loyers"))
+        items.append((C["sage"], "Distribuante", "SCPI en direct", eur(d["scpi"]["initial"]), "loyers réinvestis" if d["reinv"] else "verse des loyers"))
     if hp:
         items.append((C["blue"], "Économie d’impôt", "PER", eur(d["per"]["initial"]), "réduit ton impôt"))
     if hf:
@@ -265,7 +265,7 @@ def page3(d):
          "Rentabiliser ton épargne, tout en la gardant disponible.",
          "Unités de compte : le capital n’est pas garanti."),
         (C["sage"], "Distribuante", "SCPI en direct", f"{eur(d['scpi']['initial'])} + {num(d['scpi']['mensuel'])}\u00a0€/mois",
-         "Créer un complément de revenus passifs, grâce aux loyers perçus chaque mois.",
+         ("Faire grossir ton capital : les loyers perçus chaque mois sont réinvestis dans de nouvelles parts." if d["reinv"] else "Créer un complément de revenus passifs, grâce aux loyers perçus chaque mois."),
          "Loyers non garantis ; placement long terme, peu liquide."),
         (C["blue"], "Économie d’impôt", "PER", f"{eur(d['per']['initial'])} + {num(d['per']['mensuel'])}\u00a0€/mois",
          f"Transformer ton impôt sur le revenu en un avantage&nbsp;: profiter d’une rentabilité instantanée de {tmi} %.",
@@ -370,6 +370,48 @@ def evolution_chart(cols, hp=True):
     return f'<svg width="{W+16}" height="{base+46}" viewBox="-16 0 {W+16} {base+46}" style="margin-left:{(698-W)//2-16}px;overflow:visible">{out}</svg>'
 
 
+def evolution_chart_reinv(cols, hp=True, hf=False):
+    """Loyers réinvestis : effort réel en bas (qui stagne), puis économie d'impôt, loyers affectés au financement, loyers réinvestis (croissants).
+    La hauteur de colonne est la quantité investie par mois ; la première est la plus petite, la dernière la plus grande."""
+    W, base, top = 620, (282 if hp else 372), 70
+    n = len(cols)
+    cw = 112
+    gap = (W - n * cw) / (n - 1)
+    xs = [i * (cw + gap) for i in range(n)]
+    S = (base - top) / max(c["total"] for c in cols)
+    t = lambda x, y, s, col=C["text"], sz=11, w=600, a="middle": f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{a}" fill="{col}" font-size="{sz}" font-weight="{w}" font-family="Inter">{s}</text>'
+    out = f'<line x1="0" y1="{base}" x2="{W}" y2="{base}" stroke="{C["line"]}"/>'
+    leg = [(C["tan"], "Effort réel")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else []) + ([(C["lev"], "Loyers de la SCPI financée")] if hf else []) + [(C["sage"], "Loyers réinvestis (SCPI)")]
+    x = 0
+    for col, lab in leg:
+        out += f'<rect x="{x}" y="4" width="10" height="10" rx="2" fill="{col}"/>' + t(x + 16, 13, lab, C["text"], 10.5, 600, "start")
+        x += 16 + len(lab) * 6.1 + 18
+    prev = None
+    for i, c in enumerate(cols):
+        x0 = xs[i]
+        segs = [(c["effort"], C["tan"])] + ([(c["eco"], C["blue"])] if hp else []) + ([(c["fin"], C["lev"])] if hf else []) + [(c["reinv"], C["sage"])]
+        a = 0
+        for k, (val, col) in enumerate(segs):
+            if val > 0.0001:
+                h = val * S
+                out += f'<rect x="{x0:.1f}" y="{base-(a+val)*S:.1f}" width="{cw}" height="{h:.1f}" rx="4" fill="{col}"/>'
+                if k == 0:
+                    out += t(x0 + cw / 2, base - (a + val / 2) * S + 5, f"≈ {num(val)} €", "#2a251f", 15, 700)
+                elif h >= 15:
+                    out += t(x0 + cw / 2, base - (a + val / 2) * S + 3.5, f"{num(val)} €", "#2a251f", 9.5, 700)
+            a += val
+        out += t(x0 + cw / 2, base - c["total"] * S - 8, eur(c["total"]), C["text"], 12)
+        y_t = base - c["effort"] * S
+        if prev is not None:
+            out += f'<line x1="{xs[i-1]+cw:.1f}" y1="{prev:.1f}" x2="{x0:.1f}" y2="{y_t:.1f}" stroke="{C["tan"]}" stroke-dasharray="3 3"/>'
+        prev = y_t
+        out += t(x0 + cw / 2, base + 22, c["label"], C["text"], 11.5, 700)
+        if i > 0:
+            hausse = round((c["total"] / cols[0]["total"] - 1) * 100)
+            out += t(x0 + cw / 2, base + 38, f"investi + {hausse} %", C["sage"], 10.5, 600)
+    return f'<svg width="{W+16}" height="{base+46}" viewBox="-16 0 {W+16} {base+46}" style="margin-left:{(698-W)//2-16}px;overflow:visible">{out}</svg>'
+
+
 def waterfall(v, hp=True):
     """Cascade du 1er mois sans SCPI (PER seul, éventuellement avec assurance-vie) : versement programmé, économie d’impôt du PER, effort réel."""
     W, base = 620, 340
@@ -417,6 +459,7 @@ def page4(d):
 <tr><td style="white-space:nowrap">Versements programmés (12&nbsp;×&nbsp;{num(per_m)}&nbsp;€)</td><td>{eur(12*per_m)}</td><td>{eur(12*per_m*te)}</td></tr>
 <tr class="tot"><td>Total 1<sup>re</sup> année</td><td>{eur(per_i+12*per_m)}</td><td>{eur((per_i+12*per_m)*te)}</td></tr>"""
     hp = d.get("has_per", True)
+    hf4 = bool(d["fin"])
     hs = d["scpi"]["initial"] > 0 or d["scpi"]["mensuel"] > 0 or bool(d["fin"])    # au moins une SCPI (en direct ou financée)
     lead4 = "L’économie d’impôt du PER et les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps." if hp else "Les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps."
     txt_per = (f"Tes versements sur le PER sont déductibles de ton revenu imposable. Tu les déclares au printemps suivant : l’économie d’impôt, "
@@ -425,6 +468,11 @@ def page4(d):
     txt_scpi = ("Les loyers de tes SCPI viennent d’abord de ton versement initial, puis de chaque versement mensuel. Ils augmentent aussi avec la revalorisation "
                 "des parts déjà acquises. Chaque versement ne produit ses premiers loyers qu’après un délai de jouissance d’environ 6&nbsp;mois : la projection ne le déduit pas, "
                 "ton effort des premiers mois sera donc un peu plus élevé que sur le graphique.")
+    if d["reinv"]:      # loyers réinvestis : la somme investie croît, l'effort réel stagne (texte à faire valider par Victor)
+        txt_scpi = ("Les loyers de tes SCPI sont réinvestis après impôt dans de nouvelles parts : ce que tu investis chaque mois augmente, sans que ton effort augmente. "
+                    "Ils viennent d’abord de ton versement initial, puis de chaque versement mensuel, et progressent avec la revalorisation des parts déjà acquises. "
+                    "Chaque versement ne produit ses premiers loyers qu’après un délai de jouissance d’environ 6&nbsp;mois : la projection ne le déduit pas, "
+                    "la somme investie sera donc un peu plus faible les premiers mois que sur le graphique.")
     sty_bloc = "background:rgba(180,152,104,.12);border-color:rgba(180,152,104,.45)"
     if hp:
         bas4 = f"""<div class="card" style="margin-top:20px;padding:13px 15px 8px"><div class="lbl" style="color:{C['blue']}">Le PER, première année (tranche à {int(tmi*100)} %)</div>
@@ -438,9 +486,9 @@ def page4(d):
         bas4 = f"""<div class="card" style="margin-top:20px;{sty_bloc}"><div class="lbl" style="color:var(--gold)">Comment ça marche</div>
     <div class="lbl" style="color:{C['sage']};font-size:8.5px;margin-top:8px">SCPI</div><p style="margin-top:5px">{txt_scpi}</p></div>"""
     note4 = (f'<p style="margin:12px 0 0 {(698-620)//2}px;max-width:660px;font-size:9px;line-height:1.5;color:var(--muted)">Projection : loyers de la SCPI en direct à {pctfr(d["hyp"]["scpi_brut"])}&nbsp;% par an, '
-             f'imposés à {int(d["hyp"]["fiscalite_comptant"]*100)}&nbsp;%, parts revalorisées de {pctfr(d["hyp"]["scpi_reval"])}&nbsp;% par an' + (' ; économie d’impôt du PER à tranche constante' if hp else '') + '.</p>')
+             f'imposés à {int(d["hyp"]["fiscalite_comptant"]*100)}&nbsp;%, ' + ('réinvestis une fois par an (montants affichés en équivalent mensuel), ' if d["reinv"] else '') + f'parts revalorisées de {pctfr(d["hyp"]["scpi_reval"])}&nbsp;% par an' + (' ; économie d’impôt du PER à tranche constante' if hp else '') + '.</p>')
     if hs:      # au moins une SCPI : l'effort réel est montré dans le temps
-        graphe4 = evolution_chart(evolution(d), hp)
+        graphe4 = evolution_chart_reinv(evolution_reinv(d), hp, hf4) if d["reinv"] else evolution_chart(evolution(d), hp)
     else:       # PER seul : les loyers n'existent pas, l'économie d'impôt est constante : cascade du 1er mois
         lead4 = "L’économie d’impôt du PER finance une partie de tes versements."
         note4 = ""
@@ -776,7 +824,7 @@ def page7(d):
     fin_t = f" Financement&nbsp;: {fin_txt}." if hf else ""
     per_txt = f" Économie d’impôt du PER calculée avec une tranche marginale (TMI) de {int(d['leviers']['tmi']*100)}&nbsp;%." if hp else ""
     hsd = d["has_sd"]
-    scpi_h = f" SCPI en direct&nbsp;: {pct(h['scpi_brut'])}&nbsp;%/an de loyers, imposés à {int(h['fiscalite_comptant']*100)}&nbsp;% (fiscalité européenne)." if hsd else ""
+    scpi_h = f" SCPI en direct&nbsp;: {pct(h['scpi_brut'])}&nbsp;%/an de loyers, imposés à {int(h['fiscalite_comptant']*100)}&nbsp;% (fiscalité européenne)" + (", puis réinvestis." if d["reinv"] else ".") if hsd else ""
     reval_h = f" Parts revalorisées de {pct(h['scpi_reval'])}&nbsp;%/an." if (hsd or hf) else ""
     scpi_r = " Les SCPI sont un placement immobilier de long terme&nbsp;: capital, revenus et liquidité non garantis." if (hsd or hf) else ""
     sav_items = [
