@@ -1,6 +1,6 @@
 """Test du réinvestissement des loyers de la SCPI en direct (scpi.reinvestir_loyers = true).
 Contrôles : valeurs de patrimoine et de « poche » à 30 ans issues du simulateur projection.html (commit d621fc6, option « Réinvestir les loyers »),
-aucun loyer perçu de la SCPI en direct, page 4 en « Loyers réinvestis » (somme investie croissante, effort stable ou en baisse
+aucun loyer perçu de la SCPI en direct, page 4 en « Loyers réinvestis » (somme investie croissante, effort constant
 seulement par le financement), et refus de gen.py si la question n'a pas été posée (champ absent).
 Usage : python3 tests/test_reinvestissement.py"""
 import copy, json, os, subprocess, sys, tempfile
@@ -25,8 +25,8 @@ for nom, a in CAS.items():
         continue
     cols = model.evolution_reinv(d)
     tot = [c["total"] for c in cols]
-    if not all(tot[i] < tot[i + 1] for i in range(3)) or cols[0]["reinv"] != 0 or any(c["effort"] > cols[0]["effort"] + 0.001 for c in cols):
-        ko[nom + ":page4"] = "la somme investie doit croître, sans loyer réinvesti au 1er mois, et l'effort ne doit jamais dépasser celui du 1er mois"
+    if not all(tot[i] < tot[i + 1] for i in range(3)) or cols[0]["reinv"] != 0 or any(abs(c["effort"] - cols[0]["effort"]) > 0.001 for c in cols):
+        ko[nom + ":page4"] = "la somme investie doit croître, sans loyer réinvesti au 1er mois, et l'effort doit rester celui du 1er mois"
     with tempfile.TemporaryDirectory() as tmp:
         r = subprocess.run([sys.executable, os.path.join(RACINE, "gen.py"), spec, "--out", tmp, "--version", "2026-11-22"], capture_output=True, text=True)
         if r.returncode != 0:

@@ -170,26 +170,22 @@ if __name__ == "__main__":
 
 
 def evolution_reinv(d):
-    """Page 4, loyers de la SCPI en direct réinvestis : la quantité investie par mois augmente, l'effort réel stagne.
-    Colonnes : effort réel (bas), économie d'impôt du PER, loyers réinvestis de la SCPI en direct (haut, croissants). Les loyers de la
-    SCPI financée ne figurent pas : ils remboursent la banque, ils ne sont pas investis ; leur seule trace est la baisse de l'effort
-    (participation au financement réduite). Au 1er mois aucun loyer n'est encore réinvesti (délai de jouissance).
+    """Page 4, loyers de la SCPI en direct réinvestis : la quantité investie par mois augmente, l'effort réel reste le même.
+    Colonnes : effort réel (bas, constant), économie d'impôt du PER, loyers réinvestis de la SCPI en direct (haut, croissants).
+    Les loyers de la SCPI financée ne figurent pas et ne modifient pas l'effort affiché : ils remboursent la banque, ils ne sont pas
+    investis (décision du 26/11/2026 ; l'effort est donc légèrement surévalué pour un client avec financement, la baisse figure
+    page 6). Seule la fin du financement retire la participation au financement (horizon > durée).
+    Au 1er mois aucun loyer n'est encore réinvesti (délai de jouissance).
     Les loyers réinvestis viennent du simulateur (projection.html, reinvestir) : réinvestis une fois par an dans le simulateur,
     affichés ici en équivalent mensuel."""
     v = vases(d)
     sim = simulate(d, HORIZONS_EFFORT)
-    l1_fin = sim["series"][1]["loy_fin_mois"]
     base_effort = v["brut"] - v["eco"]
     cols = [dict(label="Au 1er mois", effort=base_effort, eco=v["eco"], reinv=0.0)]
     for h in HORIZONS_EFFORT:
         r = sim[h]
-        fin_loy, part_h = 0.0, v["part"]
-        if d["fin"]:
-            if h > d["fin"]["duree"]:            # financement terminé : plus de participation, donc plus de loyers à y affecter
-                part_h = 0.0
-            else:                                 # la participation baisse avec le loyer de la SCPI financée
-                fin_loy = max(r["loy_fin_mois"] - l1_fin, 0.0)
-        effort = max(v["brut"] - v["part"] + part_h - v["eco"] - fin_loy, 0.0)
+        part_h = 0.0 if (d["fin"] and h > d["fin"]["duree"]) else v["part"]   # financement terminé : plus de participation
+        effort = max(v["brut"] - v["part"] + part_h - v["eco"], 0.0)
         cols.append(dict(label=f"Dans {h} ans", effort=effort, eco=v["eco"], reinv=r["reinv_mois"]))
     for c in cols:
         c["total"] = c["effort"] + c["eco"] + c["reinv"]
