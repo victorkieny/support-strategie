@@ -262,7 +262,7 @@ def page3(d):
     hf = bool(f)
     cards = [
         (C["gold"], "Capitalisante", "Assurance-vie", f"{eur(d['av']['initial'])} + {num(d['av']['mensuel'])}\u00a0€/mois",
-         "Rentabiliser ton épargne, tout en la gardant disponible.",
+         "Rentabiliser ton capital, tout en le gardant disponible.",
          "Unités de compte : le capital n’est pas garanti."),
         (C["sage"], "Distribuante", "SCPI en direct", f"{eur(d['scpi']['initial'])} + {num(d['scpi']['mensuel'])}\u00a0€/mois",
          ("Maximiser ton futur complément de revenus passifs en réinvestissant les loyers perçus chaque mois." if d["reinv"] else "Créer un complément de revenus passifs, grâce aux loyers perçus chaque mois."),
@@ -273,7 +273,7 @@ def page3(d):
     ]
     if hf:
         cards.append((C["lev"], "Démultiplicatrice", "SCPI en financement", f"{eur(f['apport'])} + {num(f['effort'])}\u00a0€/mois",
-                      "Une partie de ton effort d’épargne dope ton patrimoine grâce au levier du financement.",
+                      "Une partie de ton effort d’épargne mensuel dope ton patrimoine grâce au levier du financement.",
                       f"Financement sur {f['duree']} ans."))
     if not d.get("has_per", True):
         cards = [x for x in cards if x[2] != "PER"]
@@ -293,8 +293,7 @@ def page3(d):
     parts = [p for p in parts if p[0] > 0]
     tot = sum(p[0] for p in parts)
     pie = f'<svg width="230" height="230" viewBox="0 0 260 260">{donut([(v, c) for v, c, _ in parts], 130, 130, 120, 70, tot)}' \
-          f'<text x="130" y="124" text-anchor="middle" fill="{C["text"]}" font-size="25" font-family="Bodoni Moda">{num(tot)}\u00a0€</text>' \
-          f'<text x="130" y="144" text-anchor="middle" fill="{C["muted"]}" font-size="9.5" letter-spacing="1.6" font-family="Inter">CAPITAL PLACÉ</text></svg>'
+          f'<text x="130" y="139" text-anchor="middle" fill="{C["text"]}" font-size="25" font-family="Bodoni Moda">{num(tot)}\u00a0€</text></svg>'
     leg = "".join(f'<div style="display:flex;align-items:center;gap:8px;margin-top:7px"><span class="dc" style="background:{c};margin:0"></span><span style="font-size:11px;flex:1">{n}</span><span style="font-size:11px;color:var(--muted)">{eur(v)}</span></div>' for v, c, n in parts)
     rows = [("Assurance-vie", C["gold"], d["av"]["initial"], d["av"]["mensuel"]),
             ("SCPI en direct", C["sage"], d["scpi"]["initial"], d["scpi"]["mensuel"]),
@@ -317,7 +316,7 @@ def page3(d):
 <h2 style="font-size:41px;line-height:1.04;text-wrap:balance">À chaque enveloppe son rôle, au service de tes objectifs.</h2>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:36px">{html}</div>
 <div style="display:grid;grid-template-columns:290px 1fr;gap:30px;margin-top:40px;align-items:stretch">
-  <div class="card" style="padding:16px 14px 14px"><div class="lbl" style="color:var(--gold);margin-bottom:6px">Répartition de ton patrimoine</div><div style="display:flex;justify-content:center">{pie}</div>{leg}</div>
+  <div class="card" style="padding:16px 14px 14px"><div class="lbl" style="color:var(--gold);margin-bottom:6px">Répartition de ton versement initial</div><div style="display:flex;justify-content:center">{pie}</div>{leg}</div>
   <div class="card" style="padding:16px 18px 12px;display:flex;flex-direction:column;justify-content:space-between"><div class="lbl" style="color:var(--gold)">Ce que tu mets dans chaque enveloppe</div>
   <table style="{'margin-top:6px' if hf else 'margin:auto 0'}"><tr><th>Enveloppe</th><th>Au départ</th><th>Par mois</th></tr>{trs}</table>
 {note3}</div>
@@ -453,7 +452,7 @@ def waterfall(v, hp=True):
     for i, lv in enumerate(levels):
         y = base - lv * S
         out += f'<line x1="{xs[i]+cw:.1f}" y1="{y:.1f}" x2="{xs[i+1]:.1f}" y2="{y:.1f}" stroke="{C["muted"]}" stroke-dasharray="3 3"/>'
-    labs = [(["Versement programmé", "mensuel"], C["text"])] + ([(["Économie d’impôt", "PER"], C["blue"])] if hp else []) + [(["Effort réel", "mensuel"], C["text"])]
+    labs = [(["Versement", "mensuel"], C["text"])] + ([(["Économie d’impôt", "PER"], C["blue"])] if hp else []) + [(["Effort réel", "mensuel"], C["text"])]
     for x, (lines, col) in zip(xs, labs):
         for k2, ln in enumerate(lines):
             out += t(x + cw / 2, base + 24 + 16 * k2, ln, col, 11.5, 700)
@@ -466,13 +465,13 @@ def page4(d):
     te = d["per"]["taux_eco"]
     rows = f"""
 <tr><td>Versement initial (avant le 31/12)</td><td>{eur(per_i)}</td><td>{eur(per_i*te)}</td></tr>
-<tr><td style="white-space:nowrap">Versements programmés (12&nbsp;×&nbsp;{num(per_m)}&nbsp;€)</td><td>{eur(12*per_m)}</td><td>{eur(12*per_m*te)}</td></tr>
+<tr><td style="white-space:nowrap">Versements mensuels (12&nbsp;×&nbsp;{num(per_m)}&nbsp;€)</td><td>{eur(12*per_m)}</td><td>{eur(12*per_m*te)}</td></tr>
 <tr class="tot"><td>Total 1<sup>re</sup> année</td><td>{eur(per_i+12*per_m)}</td><td>{eur((per_i+12*per_m)*te)}</td></tr>"""
     hp = d.get("has_per", True)
     hs = d["scpi"]["initial"] > 0 or d["scpi"]["mensuel"] > 0 or bool(d["fin"])    # au moins une SCPI (en direct ou financée)
-    lead4 = "L’économie d’impôt du PER et les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps." if hp else "Les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps."
+    lead4 = "L’économie d’impôt du PER et les loyers perçus de tes SCPI financent une partie de ton versement mensuel, de plus en plus avec le temps." if hp else "Les loyers perçus de tes SCPI financent une partie de ton versement mensuel, de plus en plus avec le temps."
     if d["reinv"]:      # loyers réinvestis (sous-titre validé par Victor) : ils ne sont pas perçus, donc ne financent pas les versements
-        lead4 = ("D’une part, l’économie d’impôt du PER réduit ton effort d’épargne. D’autre part, le réinvestissement de tes loyers SCPI augmente automatiquement ton investissement mensuel, sans effort supplémentaire de ta part." if hp
+        lead4 = ("D’une part, l’économie d’impôt du PER réduit ton effort réel. D’autre part, le réinvestissement de tes loyers SCPI augmente automatiquement ton investissement mensuel, sans effort supplémentaire de ta part." if hp
                  else "Le réinvestissement de tes loyers SCPI augmente automatiquement ton investissement mensuel, sans effort supplémentaire de ta part.")
     txt_per = (f"Tes versements sur le PER sont déductibles de ton revenu imposable. Tu les déclares au printemps suivant : l’économie d’impôt, "
                f"ici à {int(tmi*100)}&nbsp;%, arrive sur ton compte courant pendant l’été. La première année, tu avances donc les versements avant ce remboursement. "
@@ -495,7 +494,7 @@ def page4(d):
     if hs:      # au moins une SCPI : l'effort réel est montré dans le temps
         graphe4 = evolution_chart_reinv(evolution_reinv(d), hp) if d["reinv"] else evolution_chart(evolution(d), hp)
     else:       # PER seul : les loyers n'existent pas, l'économie d'impôt est constante : cascade du 1er mois
-        lead4 = "L’économie d’impôt du PER finance une partie de tes versements."
+        lead4 = "L’économie d’impôt du PER finance une partie de ton versement mensuel."
         graphe4 = waterfall(v, hp)
         bas4 = f"""<div style="display:grid;grid-template-columns:1.45fr 1fr;gap:16px;margin-top:20px">
   <div class="card" style="padding:13px 15px 8px"><div class="lbl" style="color:{C['blue']}">Le PER, première année (tranche à {int(tmi*100)} %)</div>
@@ -663,9 +662,9 @@ def page5(d):
     if fin and hzs[-1] > duree:
         loy_m = sim["series"][duree + 1]["loyers_mois"]
         couvert = loy_m >= prog
-        extra = (f"<br>Passée la {duree}<sup>e</sup> année, le financement des parts de SCPI est entièrement remboursé. Ainsi, le montant des versements programmés passe de {eur(round(prog + effort_dernier))} à {eur(prog)}/mois."
-                 + (f" Cet effort d’épargne est entièrement couvert par les loyers perçus à ce stade ({eur(round(loy_m, -1))}/mois)&nbsp;: le cash-flow mensuel est positif et le patrimoine continue de grandir sans effort d’épargne additionnel de ta part." if couvert else ""))
-    note5 = (f'<div style="margin-top:18px"><div class="lbl" style="color:var(--gold);margin-bottom:5px">Pourquoi l’effort d’épargne diminue-t-il à partir de la {duree}<sup style="text-transform:none">e</sup> année&nbsp;?</div><p class="note">{extra[4:]}</p></div>' if extra else "")
+        extra = (f"<br>Passée la {duree}<sup>e</sup> année, le financement des parts de SCPI est entièrement remboursé. Ainsi, ton versement mensuel passe de {eur(round(prog + effort_dernier))} à {eur(prog)}."
+                 + (f" Cet effort est entièrement couvert par les loyers perçus à ce stade ({eur(round(loy_m, -1))}/mois)&nbsp;: le cash-flow mensuel est positif et le patrimoine continue de grandir sans effort supplémentaire de ta part." if couvert else ""))
+    note5 = (f'<div style="margin-top:18px"><div class="lbl" style="color:var(--gold);margin-bottom:5px">Pourquoi ton versement mensuel diminue-t-il à partir de la {duree}<sup style="text-transform:none">e</sup> année&nbsp;?</div><p class="note">{extra[4:]}</p></div>' if extra else "")
     hz_txt = ", ".join(str(h) for h in hzs[:-1]) + f" et {hzs[-1]}"
     num_st = "font-family:'Bodoni Moda',serif;font-size:32px;margin-top:5px;line-height:1.05"
     kpi = f"""<div style="display:grid;grid-template-columns:1fr 1fr 1fr;border:1px solid var(--line);border-radius:14px;background:linear-gradient(90deg,#34414f 0%,#3b3a36 55%,#5a4c34 100%);padding:13px 0;box-shadow:0 2px 14px rgba(0,0,0,.25)">
