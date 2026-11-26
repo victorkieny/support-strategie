@@ -1,0 +1,75 @@
+{
+ "fictif": true,
+ "client": {
+  "registre": "tu",
+  "prenoms": [
+   "Sacha"
+  ],
+  "nom": "Sacha Moreau"
+ },
+ "rdv": {
+  "date": "2026-11-19",
+  "passe": "brouillon"
+ },
+ "situation": {
+  "precaution": {
+   "label": "Livret A",
+   "montant": 3000
+  },
+  "investir": 10000,
+  "composition": [
+   {
+    "libelle": "Livret A",
+    "montant": 6000
+   },
+   {
+    "libelle": "Compte courant",
+    "montant": 7000
+   }
+  ],
+  "origine": [
+   {
+    "libelle": "Livret A",
+    "montant": 3000
+   },
+   {
+    "libelle": "Compte courant",
+    "montant": 7000
+   }
+  ]
+ },
+ "objectifs": [
+  "Faire fructifier ton épargne tout en la gardant disponible",
+  "Te constituer un complément de revenus réguliers",
+  "Diversifier ton patrimoine"
+ ],
+ "av": {
+  "initial": 10000,
+  "mensuel": 500
+ },
+ "scpi": {
+  "initial": 0,
+  "mensuel": 0
+ },
+ "per": {
+  "initial": 0,
+  "mensuel": 0
+ },
+ "financement": {
+  "retenu": false
+ },
+ "leviers": {},
+ "horizons": [
+  10,
+  20,
+  30
+ ],
+ "docs_fournis": [],
+ "hypotheses": {
+  "taux_av_per": 0.055,
+  "scpi_brut": 0.055,
+  "fiscalite_comptant": 0.2,
+  "scpi_reval": 0.005,
+  "loyers_taux_simu": 0.055
+ }
+}

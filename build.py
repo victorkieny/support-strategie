@@ -81,7 +81,7 @@ NAV = ["Constat", "Stratégie", "Projection", "Mise en place"]
 
 
 def shell(idx, nav_on, inner, d, total=None):
-    total = total or (8 if d.get("financement") else 7)     # sans financement : la page 6 n'existe pas
+    # numérotation « x/N » posée à l'assemblage (pages facultatives : financement, effort réel)
     nav = "".join(f'<span class="{"on" if i == nav_on else ""}"><b>0{i+1}</b>{n}</span>' for i, n in enumerate(NAV))
     # pastille centrale du pied de page : données fictives (exemples) > « Brouillon » > rien (version finale)
     mq = "Maquette · données fictives" if d.get("fictif") else ("Brouillon" if d.get("passe") == "brouillon" else "")
@@ -90,7 +90,7 @@ def shell(idx, nav_on, inner, d, total=None):
 <section class="page">
   <div class="hdr"><img src="{LOGO}"><div class="sep"></div><div class="nav">{nav}</div><div class="who">{d['client']['nom']}</div></div>
   <div class="main">{inner}</div>
-  <div class="ftr"><span>Victor Kieny</span>{mq_html}<span>Version du {d['version']} · {idx}/{total}</span></div>
+  <div class="ftr"><span>Victor Kieny</span>{mq_html}<span>Version du {d['version']} · @@IDX@@/@@TOTAL@@</span></div>
 </section>"""
 
 
@@ -824,7 +824,9 @@ def page8(d):
 
 
 def build(d=DATA, out="out/maquette.html"):
-    pages = [page1(d), page2(d), page3(d), page4(d), page5(d)] + ([page6(d)] if d.get('financement') else []) + [page7(d), page8(d)]
+    pages = ([page1(d), page2(d), page3(d)] + ([page4(d)] if d["page_effort"] else []) + [page5(d)]
+             + ([page6(d)] if d.get('financement') else []) + [page7(d), page8(d)])
+    pages = [p.replace("@@IDX@@", str(i + 1)).replace("@@TOTAL@@", str(len(pages))) for i, p in enumerate(pages)]
     # titres à ne pas laisser déborder (prénom long) : la taille se réduit à l'impression, sans effet si ça tient
     fit = "<script>document.fonts.ready.then(()=>document.querySelectorAll('[data-fit]').forEach(e=>{const m=e.parentElement.clientWidth;let f=parseFloat(getComputedStyle(e).fontSize);while(e.scrollWidth>m+4&&f>26){f-=0.5;e.style.fontSize=f+'px';}}));</script>"
     html = f'<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Stratégie patrimoniale</title><style>{CSS}</style></head><body>{"".join(pages)}{fit}</body></html>'

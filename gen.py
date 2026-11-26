@@ -70,7 +70,7 @@ def valider(c):
 def controles_pdf(pdf, d, retenu):
     E, W = [], []
     n = int(re.search(r"Pages:\s+(\d+)", subprocess.run(["pdfinfo", pdf], capture_output=True, text=True).stdout).group(1))
-    attendu = 8 if retenu else 7
+    attendu = 6 + (1 if retenu else 0) + (1 if d["page_effort"] else 0)     # 6 pages de base + financement + effort réel
     if n != attendu:
         E.append(f"{n} pages au lieu de {attendu}")
     txt = subprocess.run(["pdftotext", "-layout", pdf, "-"], capture_output=True, text=True).stdout
