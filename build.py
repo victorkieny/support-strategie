@@ -492,13 +492,10 @@ def page4(d):
     else:
         bas4 = f"""<div class="card" style="margin-top:20px;{sty_bloc}"><div class="lbl" style="color:var(--gold)">Comment ça marche</div>
     <div class="lbl" style="color:{C['sage']};font-size:8.5px;margin-top:8px">SCPI</div><p style="margin-top:5px">{txt_scpi}</p></div>"""
-    note4 = (f'<p style="margin:12px 0 0 {(698-620)//2}px;max-width:660px;font-size:9px;line-height:1.5;color:var(--muted)">Projection : loyers de la SCPI en direct à {pctfr(d["hyp"]["scpi_brut"])}&nbsp;% par an, '
-             f'imposés à {int(d["hyp"]["fiscalite_comptant"]*100)}&nbsp;%, ' + ('réinvestis une fois par an (montants affichés en équivalent mensuel), ' if d["reinv"] else '') + f'parts revalorisées de {pctfr(d["hyp"]["scpi_reval"])}&nbsp;% par an' + (' ; économie d’impôt du PER à tranche constante' if hp else '') + '.</p>')
     if hs:      # au moins une SCPI : l'effort réel est montré dans le temps
         graphe4 = evolution_chart_reinv(evolution_reinv(d), hp) if d["reinv"] else evolution_chart(evolution(d), hp)
     else:       # PER seul : les loyers n'existent pas, l'économie d'impôt est constante : cascade du 1er mois
         lead4 = "L’économie d’impôt du PER finance une partie de tes versements."
-        note4 = ""
         graphe4 = waterfall(v, hp)
         bas4 = f"""<div style="display:grid;grid-template-columns:1.45fr 1fr;gap:16px;margin-top:20px">
   <div class="card" style="padding:13px 15px 8px"><div class="lbl" style="color:{C['blue']}">Le PER, première année (tranche à {int(tmi*100)} %)</div>
@@ -510,7 +507,6 @@ def page4(d):
 <p class="lead">{lead4}</p>
 <div class="rule"></div>
 <div style="margin-top:22px">{graphe4}</div>
-{note4}
 {bas4}
 """
     return shell(4, 1, inner, d)
