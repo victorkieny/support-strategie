@@ -399,7 +399,7 @@ def evolution_chart_reinv(cols, hp=True, hf=False):
             x, ly = 0, ly + 18
         out += f'<rect x="{x}" y="{ly}" width="10" height="10" rx="2" fill="{col}"/>' + t(x + 16, ly + 9, lab, C["text"], 10.5, 600, "start")
         x += larg + 18
-    prev = None
+    prev = prev_top = None
     for i, c in enumerate(cols):
         x0 = xs[i]
         y = base
@@ -411,9 +411,10 @@ def evolution_chart_reinv(cols, hp=True, hf=False):
                 out += t(x0 + cw / 2, y + h / 2 + (5 if k == 0 else 3.5), f"{num(val)} €", "#2a251f", 15 if k == 0 else 9.5, 700)
         out += t(x0 + cw / 2, y - 8, eur(c["total"]), C["text"], 15, 700)
         y_t = base - c["effort"] * S
-        if prev is not None:
+        if prev is not None:      # pointillés : l'effort stagne (ou baisse), la somme investie augmente
             out += f'<line x1="{xs[i-1]+cw:.1f}" y1="{prev:.1f}" x2="{x0:.1f}" y2="{y_t:.1f}" stroke="{C["tan"]}" stroke-dasharray="3 3"/>'
-        prev = y_t
+            out += f'<line x1="{xs[i-1]+cw:.1f}" y1="{prev_top:.1f}" x2="{x0:.1f}" y2="{y:.1f}" stroke="{C["sage"]}" stroke-dasharray="3 3"/>'
+        prev, prev_top = y_t, y
         out += t(x0 + cw / 2, base + 22, c["label"], C["text"], 11.5, 700)
         if i > 0:
             hausse = round((c["total"] / cols[0]["total"] - 1) * 100)
