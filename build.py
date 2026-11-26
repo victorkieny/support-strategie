@@ -188,7 +188,7 @@ def page2(d):
     hsd = d["has_sd"]
     items = [(C["gold"], "Capitalisante", "Assurance-vie", eur(d["av"]["initial"]), "reste disponible")]
     if hsd:
-        items.append((C["sage"], "Distribuante", "SCPI en direct", eur(d["scpi"]["initial"]), "loyers réinvestis" if d["reinv"] else "verse des loyers"))
+        items.append((C["sage"], "Distribuante", "SCPI en direct", eur(d["scpi"]["initial"]), "verse des loyers"))
     if hp:
         items.append((C["blue"], "Économie d’impôt", "PER", eur(d["per"]["initial"]), "réduit ton impôt"))
     if hf:
@@ -265,7 +265,7 @@ def page3(d):
          "Rentabiliser ton épargne, tout en la gardant disponible.",
          "Unités de compte : le capital n’est pas garanti."),
         (C["sage"], "Distribuante", "SCPI en direct", f"{eur(d['scpi']['initial'])} + {num(d['scpi']['mensuel'])}\u00a0€/mois",
-         ("Faire grossir ton capital : les loyers perçus chaque mois sont réinvestis dans de nouvelles parts." if d["reinv"] else "Créer un complément de revenus passifs, grâce aux loyers perçus chaque mois."),
+         ("Maximiser ton futur complément de revenus passifs en réinvestissant les loyers perçus chaque mois." if d["reinv"] else "Créer un complément de revenus passifs, grâce aux loyers perçus chaque mois."),
          "Loyers non garantis ; placement long terme, peu liquide."),
         (C["blue"], "Économie d’impôt", "PER", f"{eur(d['per']['initial'])} + {num(d['per']['mensuel'])}\u00a0€/mois",
          f"Transformer ton impôt sur le revenu en un avantage&nbsp;: profiter d’une rentabilité instantanée de {tmi} %.",
@@ -462,17 +462,15 @@ def page4(d):
     hf4 = bool(d["fin"])
     hs = d["scpi"]["initial"] > 0 or d["scpi"]["mensuel"] > 0 or bool(d["fin"])    # au moins une SCPI (en direct ou financée)
     lead4 = "L’économie d’impôt du PER et les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps." if hp else "Les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps."
+    if d["reinv"]:      # loyers réinvestis (sous-titre validé par Victor) : ils ne sont pas perçus, donc ne financent pas les versements
+        lead4 = ("L’économie d’impôt du PER et les loyers réinvestis de tes SCPI font croître ce que tu investis, sans augmenter ton effort." if hp
+                 else "Les loyers réinvestis de tes SCPI font croître ce que tu investis, sans augmenter ton effort.")
     txt_per = (f"Tes versements sur le PER sont déductibles de ton revenu imposable. Tu les déclares au printemps suivant : l’économie d’impôt, "
                f"ici à {int(tmi*100)}&nbsp;%, arrive sur ton compte courant pendant l’été. La première année, tu avances donc les versements avant ce remboursement. "
                f"Le graphique raisonne en effort lissé, à tranche d’imposition constante.")
     txt_scpi = ("Les loyers de tes SCPI viennent d’abord de ton versement initial, puis de chaque versement mensuel. Ils augmentent aussi avec la revalorisation "
                 "des parts déjà acquises. Chaque versement ne produit ses premiers loyers qu’après un délai de jouissance d’environ 6&nbsp;mois : la projection ne le déduit pas, "
                 "ton effort des premiers mois sera donc un peu plus élevé que sur le graphique.")
-    if d["reinv"]:      # loyers réinvestis : la somme investie croît, l'effort réel stagne (texte à faire valider par Victor)
-        txt_scpi = ("Les loyers de tes SCPI sont réinvestis après impôt dans de nouvelles parts : ce que tu investis chaque mois augmente, sans que ton effort augmente. "
-                    "Ils viennent d’abord de ton versement initial, puis de chaque versement mensuel, et progressent avec la revalorisation des parts déjà acquises. "
-                    "Chaque versement ne produit ses premiers loyers qu’après un délai de jouissance d’environ 6&nbsp;mois : la projection ne le déduit pas, "
-                    "la somme investie sera donc un peu plus faible les premiers mois que sur le graphique.")
     sty_bloc = "background:rgba(180,152,104,.12);border-color:rgba(180,152,104,.45)"
     if hp:
         bas4 = f"""<div class="card" style="margin-top:20px;padding:13px 15px 8px"><div class="lbl" style="color:{C['blue']}">Le PER, première année (tranche à {int(tmi*100)} %)</div>
