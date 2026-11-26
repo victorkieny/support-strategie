@@ -342,7 +342,7 @@ def evolution_chart(cols, hp=True):
     t = lambda x, y, s, col=C["text"], sz=11, w=600, a="middle": f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{a}" fill="{col}" font-size="{sz}" font-weight="{w}" font-family="Inter">{s}</text>'
     out = f'<line x1="0" y1="{base}" x2="{W}" y2="{base}" stroke="{C["line"]}"/>'
     # légende
-    leg = [(C["tan"], "Effort réel")] + [(C["sage"], "Loyers perçus (SCPI)")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else [])
+    leg = [(C["tan"], "Effort réel mensuel")] + [(C["sage"], "Loyers perçus (SCPI)")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else [])
     x = 0
     for col, lab in leg:
         out += f'<rect x="{x}" y="4" width="10" height="10" rx="2" fill="{col}"/>' + t(x + 16, 13, lab, C["text"], 10.5, 600, "start")
@@ -391,7 +391,7 @@ def evolution_chart_reinv(cols, hp=True, hf=False):
         if haut <= base - top + 0.01:
             break
         S *= (base - top) / haut
-    leg = [(C["tan"], "Effort réel")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else []) + ([(C["lev"], "Loyers perçus (SCPI en financement)")] if hf else []) + [(C["sage"], "Loyers réinvestis (SCPI en direct)")]
+    leg = [(C["tan"], "Effort réel mensuel")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else []) + ([(C["lev"], "Loyers perçus (SCPI en financement)")] if hf else []) + [(C["sage"], "Loyers réinvestis (SCPI en direct)")]
     x, ly = 0, 4
     for col, lab in leg:
         larg = 16 + len(lab) * 6.1
@@ -473,8 +473,8 @@ def page4(d):
     hs = d["scpi"]["initial"] > 0 or d["scpi"]["mensuel"] > 0 or bool(d["fin"])    # au moins une SCPI (en direct ou financée)
     lead4 = "L’économie d’impôt du PER et les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps." if hp else "Les loyers perçus de tes SCPI financent une partie de tes versements, de plus en plus avec le temps."
     if d["reinv"]:      # loyers réinvestis (sous-titre validé par Victor) : ils ne sont pas perçus, donc ne financent pas les versements
-        lead4 = ("L’économie d’impôt du PER réduit ton effort réel, et les loyers réinvestis de tes SCPI font croître ce que tu investis." if hp
-                 else "Les loyers réinvestis de tes SCPI font croître ce que tu investis, sans augmenter ton effort.")
+        lead4 = ("D’une part, l’économie d’impôt du PER réduit ton effort d’épargne. D’autre part, le réinvestissement de tes loyers SCPI augmente automatiquement ton investissement mensuel, sans effort supplémentaire de ta part." if hp
+                 else "Le réinvestissement de tes loyers SCPI augmente automatiquement ton investissement mensuel, sans effort supplémentaire de ta part.")
     txt_per = (f"Tes versements sur le PER sont déductibles de ton revenu imposable. Tu les déclares au printemps suivant : l’économie d’impôt, "
                f"ici à {int(tmi*100)}&nbsp;%, arrive sur ton compte courant pendant l’été. La première année, tu avances donc les versements avant ce remboursement. "
                f"Le graphique raisonne en effort lissé, à tranche d’imposition constante.")
@@ -507,7 +507,7 @@ def page4(d):
   <div class="card" style="{sty_bloc}"><div class="lbl" style="color:var(--gold)">Comment ça marche</div><p style="margin-top:6px">{txt_per}</p></div>
 </div>"""
     inner = f"""
-<h2 style="font-size:41px;line-height:1.04;text-wrap:balance">Ton effort réel est inférieur à ce que tu investis.</h2>
+<h2 style="font-size:41px;line-height:1.04;text-wrap:balance">Chaque mois, ton effort réel est inférieur à ce que tu investis.</h2>
 <p class="lead">{lead4}</p>
 <div class="rule"></div>
 <div style="margin-top:22px">{graphe4}</div>
