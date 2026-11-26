@@ -33,7 +33,7 @@ for nom, temps in CAS.items():
             continue
         p4 = subprocess.run(["pdftotext", "-f", "4", "-l", "4", "-layout", pdf, "-"], capture_output=True, text=True).stdout
         flat = " ".join(p4.split())
-        a = {"de plus en plus": "de plus en plus avec le temps" in flat, "dans 15 ans": "Dans 15 ans" in flat, "loyers": ("Loyers perçus" in flat or "Loyers réinvestis" in flat)}
+        a = {"de plus en plus": "de plus en plus avec le temps" in flat, "dans 15 ans": "Dans 15 ans" in flat, "loyers": ("Loyers perçus" in flat or "Loyer réinvesti" in flat)}
         att = {"de plus en plus": temps and "reinvest" not in nom, "dans 15 ans": temps, "loyers": temps}   # réinvestissement : sous-titre propre (loyers non perçus)
         if a != att:
             ko[nom] = dict(obtenu=a, attendu=att)

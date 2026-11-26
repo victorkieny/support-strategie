@@ -34,8 +34,8 @@ for nom, a in CAS.items():
             continue
         pdf = [os.path.join(tmp, f) for f in os.listdir(tmp) if f.endswith(".pdf")][0]
         p4 = " ".join(subprocess.run(["pdftotext", "-f", "4", "-l", "4", "-layout", pdf, "-"], capture_output=True, text=True).stdout.split())
-        if "Loyers réinvestis (SCPI)" not in p4 or "Loyers perçus" in p4 or "investi + " not in p4:
-            ko[nom + ":pdf"] = "page 4 : légende « Loyers réinvestis », pas de « Loyers perçus », « investi + x % »"
+        if "Loyer réinvesti (SCPI en direct)" not in p4 or "Loyers perçus" in p4 or "investi + " not in p4:
+            ko[nom + ":pdf"] = "page 4 : légende « Loyer réinvesti (SCPI en direct) », pas de « Loyers perçus », « investi + x % »"
 # champ absent : gen.py doit refuser
 c = json.load(open(os.path.join(RACINE, "spec", "client_exemple.json"), encoding="utf-8"))
 del c["scpi"]["reinvestir_loyers"]

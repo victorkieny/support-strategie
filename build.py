@@ -391,11 +391,14 @@ def evolution_chart_reinv(cols, hp=True, hf=False):
         if haut <= base - top + 0.01:
             break
         S *= (base - top) / haut
-    leg = [(C["tan"], "Effort réel")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else []) + ([(C["lev"], "Loyers de la SCPI financée")] if hf else []) + [(C["sage"], "Loyers réinvestis (SCPI)")]
-    x = 0
+    leg = [(C["tan"], "Effort réel")] + ([(C["blue"], "Économie d’impôt (PER)")] if hp else []) + ([(C["lev"], "Loyer perçu (SCPI en financement)")] if hf else []) + [(C["sage"], "Loyer réinvesti (SCPI en direct)")]
+    x, ly = 0, 4
     for col, lab in leg:
-        out += f'<rect x="{x}" y="4" width="10" height="10" rx="2" fill="{col}"/>' + t(x + 16, 13, lab, C["text"], 10.5, 600, "start")
-        x += 16 + len(lab) * 6.1 + 18
+        larg = 16 + len(lab) * 6.1
+        if x > 0 and x + larg > W:          # légende trop longue pour une ligne : retour à la ligne
+            x, ly = 0, ly + 18
+        out += f'<rect x="{x}" y="{ly}" width="10" height="10" rx="2" fill="{col}"/>' + t(x + 16, ly + 9, lab, C["text"], 10.5, 600, "start")
+        x += larg + 18
     prev = None
     for i, c in enumerate(cols):
         x0 = xs[i]
