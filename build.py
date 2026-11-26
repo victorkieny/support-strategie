@@ -396,7 +396,7 @@ def page4(d):
     note4 = (f'<p style="margin:12px 0 0 {(698-620)//2}px;max-width:660px;font-size:9px;line-height:1.5;color:var(--muted)">Projection : loyers de la SCPI en direct à {pctfr(d["hyp"]["scpi_brut"])}&nbsp;% par an, '
              f'imposés à {int(d["hyp"]["fiscalite_comptant"]*100)}&nbsp;%, parts revalorisées de {pctfr(d["hyp"]["scpi_reval"])}&nbsp;% par an' + (' ; économie d’impôt du PER à tranche constante' if hp else '') + '.</p>')
     inner = f"""
-<h2 style="font-size:41px;line-height:1.04;text-wrap:balance">Ton effort réel est inférieur à ce que tu verses, et l’écart peut se creuser.</h2>
+<h2 style="font-size:41px;line-height:1.04;text-wrap:balance">Ton effort réel est inférieur à ce que tu investis.</h2>
 <p class="lead">{lead4}</p>
 <div class="rule"></div>
 <div style="margin-top:22px">{evolution_chart(evo, hp)}</div>
